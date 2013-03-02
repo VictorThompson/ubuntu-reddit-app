@@ -378,23 +378,31 @@ MainView {
 
                                 image: Image {
                                     id: thumbimage
-
                                     fillMode: Image.Stretch
-
-                                    function mustBeShown (link) {
-                                        return !(link == "self" || link == "nsfw" || link == "default" || model.data.is_self)
-                                    }
                                     opacity: (model.data.is_self) ? 0 : 1
-
-
-                                    source: (mustBeShown (model.data.thumbnail))?
-                                                model.data.thumbnail : ""
+                                    function chooseThumb () {
+                                        if (model.data.is_self) {
+                                            return ""
+                                        } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "") {
+                                            return "link.png"
+                                        } else {
+                                            return model.data.thumbnail
+                                        }
+                                    }
+                                    source: chooseThumb()
                                 }
                                 Text {
                                     id: alttext
                                     anchors.centerIn: parent
                                     opacity: (model.data.is_self) ? .6 : 0
                                     text: "Aa+"
+                                    font.pixelSize: 22
+                                }
+                                Text {
+                                    id: nsfwtext
+                                    anchors.centerIn: parent
+                                    opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
+                                    text: "nsfw"
                                     font.pixelSize: 22
                                 }
 
