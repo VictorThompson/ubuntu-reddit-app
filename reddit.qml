@@ -365,13 +365,13 @@ MainView {
 
                         delegate: ListItem.Standard {
                             id: listitem
-                            height: (Js.getFetchedArray()[Storage.getSetting("postheight")] == null) ? 8 : units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
+                            height: (Storage.getSetting("postheight") == null) ? 8 : units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
                             width: parent.width
 
                             UbuntuShape {
                                 id: thumbshape
                                 height: parent.height
-                                width: (model.data.thumbnail == "self" || Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
+                                width: parent.height
                                 anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
                                 anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
                                 radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
@@ -382,19 +382,32 @@ MainView {
                                     fillMode: Image.Stretch
 
                                     function mustBeShown (link) {
-                                        return !(link == "self" || link == "nsfw" || link == "default")
+                                        return !(link == "self" || link == "nsfw" || link == "default" || model.data.is_self)
                                     }
+                                    opacity: (model.data.is_self) ? 0 : 1
+
 
                                     source: (mustBeShown (model.data.thumbnail))?
                                                 model.data.thumbnail : ""
+                                }
+                                Text {
+                                    id: alttext
+                                    anchors.centerIn: parent
+                                    opacity: (model.data.is_self) ? .6 : 0
+                                    text: "Aa+"
+                                    font.pixelSize: 22
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        flipablelink.flipped = true
-                                        backsidelink.commentpage = false
-                                        webview.url = model.data.url
+                                        if (model.data.is_self) {
+                                            false
+                                        } else {
+                                            flipablelink.flipped = true
+                                            backsidelink.commentpage = false
+                                            webview.url = model.data.url
+                                        }
                                     }
                                     enabled: !flipablelink.flipped
                                 }
