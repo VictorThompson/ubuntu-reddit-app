@@ -1094,7 +1094,8 @@ MainView {
                                         var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
                                         http.open("POST", loginurl, true);
 
-                                        console.debug(params)
+                                        // Only display parms--which has passwd if needed.
+                                        // console.debug(params)
 
                                         // Send the proper header information along with the request
                                         http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
