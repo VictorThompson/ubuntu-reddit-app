@@ -4,5 +4,5 @@ Version=1.0
 Type=Application
 Terminal=false
 Exec=/usr/bin/ubuntu-reddit-app
-Icon=/usr/share/ubuntu-reddit-app/facebook64.png
+Icon=/usr/share/ubuntu-reddit-app/reddit64.png
 Name=reddit
