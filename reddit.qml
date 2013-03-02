@@ -169,7 +169,7 @@ MainView {
                                 width: parent.width / 2
                                 onClicked: {
                                     if (subreddittextfield.text !== "") {
-                                        subreddittab.url = "/r/" + subreddittextfield.text + "/"
+                                        subreddittab.url = "/r/" + subreddittextfield.text
                                     } else {
                                         subreddittab.url = "/"
                                     }
@@ -217,7 +217,7 @@ MainView {
                         visible: (Storage.getSetting("sub1").toString().length > 0) ? true : false
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub1").toString() + "/"
+                            subreddittab.url = "/r/" + Storage.getSetting("sub1").toString()
                             reloadTabs()
                         }
                     }
@@ -228,7 +228,7 @@ MainView {
                         text: (Storage.getSetting("sub2").toString().length > 0) ? Storage.getSetting("sub2").toString() : "Unknown"
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub2").toString() + "/"
+                            subreddittab.url = "/r/" + Storage.getSetting("sub2").toString()
                             reloadTabs()
                         }
                     }
@@ -239,7 +239,7 @@ MainView {
                         text: (Storage.getSetting("sub3").toString().length > 0) ? Storage.getSetting("sub3").toString() : "Unknown"
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub3").toString() + "/"
+                            subreddittab.url = "/r/" + Storage.getSetting("sub3").toString()
                             reloadTabs()
                         }
                     }
@@ -250,7 +250,7 @@ MainView {
                         text: (Storage.getSetting("sub4").toString().length > 0) ? Storage.getSetting("sub4").toString() : "Unknown"
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub4").toString() + "/"
+                            subreddittab.url = "/r/" + Storage.getSetting("sub4").toString()
                             reloadTabs()
                         }
                     }
