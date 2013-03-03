@@ -1297,6 +1297,7 @@ MainView {
 
                                         //width: parent.width
                                         height: units.gu(8)
+                                        color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
 
                                         text: "Note: app will need to be restarted\nfor changes to show up on the toolbar."
 
