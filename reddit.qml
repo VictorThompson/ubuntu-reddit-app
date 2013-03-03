@@ -231,19 +231,6 @@ MainView {
                         // initialize settings
                         console.debug("settings not initialized on subreddit load")
                     }
-                    // How do we dynamically change to the Toolbar Actions?
-//                    if (toolbar.sub1action.text === "" || toolbar.sub1action.text === "Unknown") {
-//                        toolbar.sub1action.text = "ubuntu"
-//                    }
-//                    if (toolbar.sub2action.text === "" || toolbar.sub2action.text === "Unknown") {
-//                        toolbar.sub2action.text = "pics"
-//                    }
-//                    if (toolbar.sub3action.text === "" || toolbar.sub3action.text === "Unknown") {
-//                        toolbar.sub3action.text = "linux"
-//                    }
-//                    if (toolbar.sub4action.text === "" || toolbar.sub4action.text === "Unknown") {
-//                        toolbar.sub4action.text = "ubuntuphone"
-//                    }
                 }
 
                 tools: ToolbarActions {
@@ -261,45 +248,48 @@ MainView {
                     Action {
                         objectName: "sub1action"
 
-                        text: (Storage.getSetting("sub1").toString().length > 0) ? Storage.getSetting("sub1").toString() : "Unknown"
+                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub1") !== null
+                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub1").toString() : "ubuntu"
                         iconSource: toolbar.chooseIcon(text)
-                        visible: (Storage.getSetting("sub1").toString().length > 0) ? true : false
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub1").toString()
+                            subreddittab.url = "/r/" + text
                             reloadTabs()
                         }
                     }
                     Action {
                         objectName: "sub2action"
 
-                        text: (Storage.getSetting("sub2").toString().length > 0) ? Storage.getSetting("sub2").toString() : "Unknown"
+                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub2") !== null
+                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub2").toString() : "pics"
                         iconSource: toolbar.chooseIcon(text)
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub2").toString()
+                            subreddittab.url = "/r/" + text
                             reloadTabs()
                         }
                     }
                     Action {
                         objectName: "sub3action"
 
-                        text: (Storage.getSetting("sub3").toString().length > 0) ? Storage.getSetting("sub3").toString() : "Unknown"
+                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub3") !== null
+                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub3").toString() : "linux"
                         iconSource: toolbar.chooseIcon(text)
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub3").toString()
+                            subreddittab.url = "/r/" + text
                             reloadTabs()
                         }
                     }
                     Action {
                         objectName: "sub4action"
 
-                        text: (Storage.getSetting("sub4").toString().length > 0) ? Storage.getSetting("sub4").toString() : "Unknown"
+                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub4") !== null
+                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub4").toString() : "ubuntuphone"
                         iconSource: toolbar.chooseIcon(text)
 
                         onTriggered: {
-                            subreddittab.url = "/r/" + Storage.getSetting("sub4").toString()
+                            subreddittab.url = "/r/" + text
                             reloadTabs()
                         }
                     }
@@ -909,10 +899,10 @@ MainView {
                             nightmode.loadValue()
                             flippages.loadValue()
                             autologin.loadValue()
-                            sub1.text = Storage.getSetting("sub1")
-                            sub2.text = Storage.getSetting("sub2")
-                            sub3.text = Storage.getSetting("sub3")
-                            sub4.text = Storage.getSetting("sub4")
+                            sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
+                            sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
+                            sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
+                            sub4.text = (Storage.getSetting("sub4") === null) ? "" : Storage.getSetting("sub4")
                         }
 
                         ListItem.SingleControl {
@@ -1220,7 +1210,7 @@ MainView {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: (Storage.getSetting("sub1").toString().length) ? Storage.getSetting("sub1") : "ubuntu"
+                                        text: Storage.getSetting("sub1")
 
                                         onTextChanged: Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
 
@@ -1239,7 +1229,7 @@ MainView {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: (Storage.getSetting("sub2").toString().length) ? Storage.getSetting("sub2") : "funny"
+                                        text: Storage.getSetting("sub2")
 
                                         onTextChanged: Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
 
@@ -1258,7 +1248,7 @@ MainView {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: (Storage.getSetting("sub3").toString().length) ? Storage.getSetting("sub3") : "pics"
+                                        text:  Storage.getSetting("sub3")
 
                                         onTextChanged: Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
 
@@ -1277,7 +1267,7 @@ MainView {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: (Storage.getSetting("sub4").toString().length) ? Storage.getSetting("sub4") : "gifs"
+                                        text: Storage.getSetting("sub4")
 
                                         onTextChanged: Storage.setSetting("sub4", subredditColumn.stripSlashes(text))
 

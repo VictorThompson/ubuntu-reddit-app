@@ -40,14 +40,18 @@ function getSetting(setting) {
    var db = getDatabase();
    var res="";
 
-   db.transaction(function(tx) {
-     var rs = tx.executeSql('SELECT value FROM settings WHERE setting=?;', [setting]);
-     if (rs.rows.length > 0) {
-          res = rs.rows.item(0).value;
-     } else {
-         res = "Unknown";
-     }
-  })
+   try {
+       db.transaction(function(tx) {
+         var rs = tx.executeSql('SELECT value FROM settings WHERE setting=?;', [setting]);
+         if (rs.rows.length > 0) {
+              res = rs.rows.item(0).value;
+         } else {
+             res = "Unknown";
+         }
+      })
+   } catch(e) {
+       return "";
+   }
 
   // The function returns “Unknown” if the setting was not found in the database
   // For more advanced projects, this should probably be handled through error codes
