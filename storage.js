@@ -11,8 +11,8 @@ function initialize() {
         function(tx) {
             // Create the settings table if it doesn't already exist
             // If the table exists, this is skipped
+            //tx.executeSql('DROP TABLE settings');
             tx.executeSql('CREATE TABLE IF NOT EXISTS settings(setting TEXT UNIQUE, value TEXT)');
-            //tx.executeSql('DELETE TABLE settings');
       });
 }
 

@@ -15,13 +15,13 @@ import "javascript.js" as Js
 MainView {
     // objectName for functional testing purposes (autopilot-qt5)
     objectName: "reddit"
-    
     width: units.gu(50)
     height: units.gu(75)
 
     Tabs {
         id: tabs
         anchors.fill: parent
+        selectedTabIndex: 0
 
         // First tab begins here
         Tab {
@@ -224,7 +224,26 @@ MainView {
             }
 
             page: Page {
+                id: subredditpage
                 anchors.margins: units.gu(4)
+                Component.onCompleted: {
+                    if (Storage.getSetting("initialized") !== "true") {
+                        // initialize settings
+                        console.debug("settings not initialized on subreddit load")
+                    }
+                    if (toolbar.sub1action.text === "" || toolbar.sub1action.text === "Unknown") {
+                        toolbar.sub1action.text = "ubuntu"
+                    }
+                    if (toolbar.sub2action.text === "" || toolbar.sub2action.text === "Unknown") {
+                        toolbar.sub2action.text = "pics"
+                    }
+                    if (toolbar.sub3action.text === "" || toolbar.sub3action.text === "Unknown") {
+                        toolbar.sub3action.text = "linux"
+                    }
+                    if (toolbar.sub4action.text === "" || toolbar.sub4action.text === "Unknown") {
+                        toolbar.sub4action.text = "ubuntuphone"
+                    }
+                }
 
                 tools: ToolbarActions {
                     id: toolbar
@@ -376,7 +395,8 @@ MainView {
 
                 JSONListModel {
                     id: linkslistmodel
-                    source: "http://www.reddit.com/.json?uh="+Storage.getSetting("userhash")+"&api_type=json&limit=" + Js.getFetchedArray()[Storage.getSetting("numberfetchedposts")]
+                    source: (Storage.getSetting("initialized") === "true") ? "http://www.reddit.com/.json?uh=" + Storage.getSetting("userhash")+"&api_type=json&limit=" + Js.getFetchedArray()[Storage.getSetting("numberfetchedposts")]
+                                                                           : "http://www.reddit.com/.json?api_type=json&limit=25"
                     query: "$.data.children[*]"
                 }
 
@@ -394,7 +414,7 @@ MainView {
 
                         delegate: ListItem.Standard {
                             id: listitem
-                            height: (Storage.getSetting("postheight") == null) ? 8 : units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
+                            height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
                             width: parent.width
 
                             UbuntuShape {
@@ -826,26 +846,6 @@ MainView {
             }
         }
 
-//        SubredditTab {url: "/r/all"} // reddit.com/r/all
-//        SubredditTab {url: "/r/funny"}
-//        SubredditTab {url: "/r/waterporn"}
-
-//        Tab {
-//            objectName: "Tab1"
-            
-//            title: i18n.tr("reddit")
-            
-//            // Tab content begins here
-//            page: Page {
-//                Column {
-//                    anchors.centerIn: parent
-//                    Label {
-//                        text: i18n.tr("Swipe from right to left to change tab.")
-//                    }
-//                }
-//            }
-//        }
-        
         // Second tab begins here
         Tab {
             id: settingstab
@@ -872,7 +872,28 @@ MainView {
 
                         Component.onCompleted: {
                             Storage.initialize()
-
+                            console.debug("INITIALIZED")
+                            if (Storage.getSetting("initialized") !== "true") {
+                                // initialize settings
+                                console.debug("reset settings")
+                                Storage.setSetting("initialized", "true")
+                                Storage.setSetting("numberfetchedposts", "2")
+                                Storage.setSetting("numberfetchedcomments", "2")
+                                Storage.setSetting("enablethumbnails", "true")
+                                Storage.setSetting("thumbnailsonleftside", "true")
+                                Storage.setSetting("rounderthumbnails", "false")
+                                Storage.setSetting("postheight", "0")
+                                Storage.setSetting("nightmode", "false")
+                                Storage.setSetting("flippages", "true")
+                                Storage.setSetting("autologin", "false")
+                                Storage.setSetting("sub1", "ubuntu")
+                                Storage.setSetting("sub2", "pics")
+                                Storage.setSetting("sub3", "linux")
+                                Storage.setSetting("sub4", "ubuntuphone")
+                                Storage.setSetting("accountname", "")
+                                Storage.setSetting("passwd", "")
+                                reloadTabs()
+                            }
                             numberfetchedposts.selectedIndex = parseInt(Storage.getSetting("numberfetchedposts"))
                             numberfetchedcomments.selectedIndex = parseInt(Storage.getSetting("numberfetchedcomments"))
                             // account...
@@ -884,6 +905,10 @@ MainView {
                             nightmode.loadValue()
                             flippages.loadValue()
                             autologin.loadValue()
+                            sub1.text = Storage.getSetting("sub1")
+                            sub2.text = Storage.getSetting("sub2")
+                            sub3.text = Storage.getSetting("sub3")
+                            sub4.text = Storage.getSetting("sub4")
                         }
 
                         ListItem.SingleControl {
@@ -1285,6 +1310,27 @@ MainView {
                 }
             }
         }
+
+
+//        SubredditTab {url: "/r/all"} // reddit.com/r/all
+//        SubredditTab {url: "/r/funny"}
+//        SubredditTab {url: "/r/waterporn"}
+
+//        Tab {
+//            objectName: "Tab1"
+            
+//            title: i18n.tr("reddit")
+            
+//            // Tab content begins here
+//            page: Page {
+//                Column {
+//                    anchors.centerIn: parent
+//                    Label {
+//                        text: i18n.tr("Swipe from right to left to change tab.")
+//                    }
+//                }
+//            }
+//        }
     }
 
     function reloadTabs() {
