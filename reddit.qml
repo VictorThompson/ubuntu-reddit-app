@@ -231,18 +231,19 @@ MainView {
                         // initialize settings
                         console.debug("settings not initialized on subreddit load")
                     }
-                    if (toolbar.sub1action.text === "" || toolbar.sub1action.text === "Unknown") {
-                        toolbar.sub1action.text = "ubuntu"
-                    }
-                    if (toolbar.sub2action.text === "" || toolbar.sub2action.text === "Unknown") {
-                        toolbar.sub2action.text = "pics"
-                    }
-                    if (toolbar.sub3action.text === "" || toolbar.sub3action.text === "Unknown") {
-                        toolbar.sub3action.text = "linux"
-                    }
-                    if (toolbar.sub4action.text === "" || toolbar.sub4action.text === "Unknown") {
-                        toolbar.sub4action.text = "ubuntuphone"
-                    }
+                    // How do we dynamically change to the Toolbar Actions?
+//                    if (toolbar.sub1action.text === "" || toolbar.sub1action.text === "Unknown") {
+//                        toolbar.sub1action.text = "ubuntu"
+//                    }
+//                    if (toolbar.sub2action.text === "" || toolbar.sub2action.text === "Unknown") {
+//                        toolbar.sub2action.text = "pics"
+//                    }
+//                    if (toolbar.sub3action.text === "" || toolbar.sub3action.text === "Unknown") {
+//                        toolbar.sub3action.text = "linux"
+//                    }
+//                    if (toolbar.sub4action.text === "" || toolbar.sub4action.text === "Unknown") {
+//                        toolbar.sub4action.text = "ubuntuphone"
+//                    }
                 }
 
                 tools: ToolbarActions {
@@ -390,7 +391,7 @@ MainView {
                 }
 
                 transitions: Transition {
-                    NumberAnimation { target: linkrotation; property: "angle"; duration: (Storage.getSetting("flippages") != "true")? 0 : flipspeed }
+                    NumberAnimation { target: linkrotation; property: "angle"; duration: (Storage.getSetting("flippages") != "true")? 0 : 200 }
                 }
 
                 JSONListModel {
