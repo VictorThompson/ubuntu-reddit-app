@@ -759,6 +759,7 @@ MainView {
                             commentslistmodel.source = "http://www.reddit.com" + permalink + ".json"
                             pagestack.clear()
                             pagestack.push(rootpage)
+                            popstackbutton.visible = false
                         }
 
                         JSONListModel {
@@ -766,63 +767,81 @@ MainView {
                             query: "$[1].data.children[*]"
                         }
 
-
                         PageStack {
                             id: pagestack
                             anchors.fill: parent
+                            Component.onCompleted: push(rootpage, [])
 
                             // try to merge these next 2
-                            Component {
+                            Page {
                                 id: rootpage
-                                Page {
-                                    title: ""
+                                title: ""
 
-                                    ListView {
-                                        anchors.fill: parent
-                                        model: commentslistmodel.model
+                                ListView {
+                                    anchors.fill: parent
+                                    model: commentslistmodel.model
 
-                                        delegate: ListItem.Standard {
-                                            text: model.data.body
+                                    delegate: ListItem.Standard {
+                                        text: model.data.body
 
-                                            progression: true
-                                            onClicked: {
-                                                console.debug("clicked")
+                                        progression: (model.data.replies === "") ? false : true
+                                        onClicked: {
+                                            if (model.data.replies !== "") {
                                                 pagestack.push(newpage, {commentsModel: model.data.replies.data.children})
+                                                popstackbutton.visible = true
                                             }
                                         }
                                     }
                                 }
                             }
 
-//                            Component {
-//                                id: newpage
+                            Component {
+                                id: newpage
 
-//                                Page {
-//                                    id: page
-//                                    title: ""
+                                Page {
+                                    id: page
+                                    title: ""
 
-//                                    property variant commentsModel: []
+                                    property variant commentsModel: []
 
-//                                    ListView {
-//                                        anchors.fill: parent
-//                                        model: commentsModel
+                                    ListView {
+                                        anchors.fill: parent
+                                        model: commentsModel
 
-//                                        delegate: ListItem.Standard {
-//                                            text: modelData.data.body
+                                        delegate: ListItem.Standard {
+                                            text: modelData.data.body
 
-
-//                                            progression: true
-//                                            onClicked: pagestack.push(newpage, {commentsModel: modelData.data.replies.data.children})
-//                                        }
-//                                    }
-//                                }
-//                            }
+                                            progression: (modelData.data.replies === "") ? false : true
+                                            onClicked: {
+                                                if (modelData.data.replies !== "") {
+                                                    pagestack.push(newpage, {commentsModel: modelData.data.replies.data.children})
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Button {
+                            id: popstackbutton
+                            text: "back to parent comment"
+                            height: units.gu(4)
+                            visible: false
+                            width: parent.width
+                            anchors.top: parent.top
+                            onClicked: {
+                                pagestack.pop()
+                                if (pagestack.depth === 1) {
+                                    popstackbutton.visible = false
+                                }
+                            }
                         }
                     }
 
                     Rectangle {
                         id: linkrectangle
                         opacity: (backsidelink.commentpage)? 0 : 1
+                        enabled: (backsidelink.commentpage)? 0 : 1
 
                         height: parent.height - linkbackbutton.height
                         width: parent.width
