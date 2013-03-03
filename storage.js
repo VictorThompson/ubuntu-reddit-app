@@ -1,7 +1,7 @@
 //storage.js
 // First, let's create a short helper function to get the database connection
 function getDatabase() {
-     return LocalStorage.openDatabaseSync("RedditApp", "1.0", "StorageDatabase", 1000000);
+     return LocalStorage.openDatabaseSync("ubuntu-reddit-app", "1.0", "StorageDatabase", 1000000);
 }
 
 // At the start of the application, we can initialize the tables we need if they haven't been created yet
