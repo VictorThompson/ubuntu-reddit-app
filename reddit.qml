@@ -925,17 +925,6 @@ MainView {
                             }
                         }
 
-                        ListItem.Standard {
-                            text: "Automatically log in when app starts"
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: autologin
-                                name: "autologin"
-                            }
-                        }
-
                         ListItem.SingleControl {
                             control: Button {
                                 height: units.gu(4)
@@ -1180,6 +1169,16 @@ MainView {
                                             }
                                         }
                                         http.send(params);
+                                    }
+                                }
+                                ListItem.Standard {
+                                    text: "Automatically log in when app starts"
+                                    height: units.gu(5)
+
+                                    control: SettingSwitch {
+                                        anchors.centerIn: parent
+                                        id: autologin
+                                        name: "autologin"
                                     }
                                 }
                                 ListItem.Standard {
