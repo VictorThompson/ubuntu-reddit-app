@@ -420,7 +420,7 @@ MainView {
                             UbuntuShape {
                                 id: thumbshape
                                 height: parent.height
-                                width: parent.height
+                                width: (Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
                                 anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
                                 anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
                                 radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
