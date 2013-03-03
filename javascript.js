@@ -10,7 +10,7 @@ function getFetchedArray () {
 }
 
 function getPostHeightArray () {
-    return ["6", "8", "10", "12"]
+    return ["6", "7", "8", "9"]
 }
 
 function getFlipSpeed() {

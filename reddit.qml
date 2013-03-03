@@ -159,6 +159,19 @@ MainView {
 
                                 font.pixelSize: 20
                             }
+                            Text {
+                                id: subreddittext
+
+                                width: parent.width
+                                height: units.gu(4)
+
+                                anchors.top: subreddittextfield.bottom
+                                enabled: parent.visible
+                                text: "which subreddit?"
+                                opacity: .6
+
+                                font.pixelSize: 14
+                            }
 
                             Button {
                                 id: promptokbutton
@@ -169,7 +182,12 @@ MainView {
                                 width: parent.width / 2
                                 onClicked: {
                                     if (subreddittextfield.text !== "") {
-                                        subreddittab.url = "/r/" + subreddittextfield.text
+                                        var split = subreddittextfield.text.split("/")
+                                        var i = 0
+                                        for (; split.length; i++) {
+                                            if ( split[i] !== "" && split[i] !== "r") break
+                                        }
+                                        subreddittab.url = "/r/" + split[i]
                                     } else {
                                         subreddittab.url = "/"
                                     }
@@ -209,11 +227,22 @@ MainView {
                 anchors.margins: units.gu(4)
 
                 tools: ToolbarActions {
+                    id: toolbar
+                    function chooseIcon (text) {
+                        var test = text.toLowerCase().toString()
+                        if (test.match(".*ubuntu.*")) {
+                            return "ubuntu.png"
+                        } else if (test.match(".*linux.*")) {
+                            return "linux.png"
+                        } else {
+                            return "reddit.png"
+                        }
+                    }
                     Action {
                         objectName: "sub1action"
 
-                        iconSource: Qt.resolvedUrl("reddit.png")
                         text: (Storage.getSetting("sub1").toString().length > 0) ? Storage.getSetting("sub1").toString() : "Unknown"
+                        iconSource: toolbar.chooseIcon(text)
                         visible: (Storage.getSetting("sub1").toString().length > 0) ? true : false
 
                         onTriggered: {
@@ -224,8 +253,8 @@ MainView {
                     Action {
                         objectName: "sub2action"
 
-                        iconSource: Qt.resolvedUrl("reddit.png")
                         text: (Storage.getSetting("sub2").toString().length > 0) ? Storage.getSetting("sub2").toString() : "Unknown"
+                        iconSource: toolbar.chooseIcon(text)
 
                         onTriggered: {
                             subreddittab.url = "/r/" + Storage.getSetting("sub2").toString()
@@ -235,8 +264,8 @@ MainView {
                     Action {
                         objectName: "sub3action"
 
-                        iconSource: Qt.resolvedUrl("reddit.png")
                         text: (Storage.getSetting("sub3").toString().length > 0) ? Storage.getSetting("sub3").toString() : "Unknown"
+                        iconSource: toolbar.chooseIcon(text)
 
                         onTriggered: {
                             subreddittab.url = "/r/" + Storage.getSetting("sub3").toString()
@@ -246,8 +275,8 @@ MainView {
                     Action {
                         objectName: "sub4action"
 
-                        iconSource: Qt.resolvedUrl("reddit.png")
                         text: (Storage.getSetting("sub4").toString().length > 0) ? Storage.getSetting("sub4").toString() : "Unknown"
+                        iconSource: toolbar.chooseIcon(text)
 
                         onTriggered: {
                             subreddittab.url = "/r/" + Storage.getSetting("sub4").toString()
@@ -258,18 +287,18 @@ MainView {
                     Action {
                         objectName: "enter"
 
-                        iconSource: Qt.resolvedUrl("reddit.png")
                         text: "?"
+                        iconSource: Qt.resolvedUrl("reddit.png")
 
                         onTriggered: {
                             dialog.showSubredditPrompt()
                         }
                     }
                     Action {
-                        objectName: "Home"
+                        objectName: "home"
 
+                        text: "home"
                         iconSource: Qt.resolvedUrl("reddit.png")
-                        text: "Home"
 
                         onTriggered: {
                             subreddittab.url = "/"
@@ -280,8 +309,8 @@ MainView {
                     Action {
                         objectName: "action"
 
+                        text: "login"
                         iconSource: Qt.resolvedUrl("avatar.png")
-                        text: "Login"
 
                         onTriggered: {
                             login()
@@ -383,7 +412,7 @@ MainView {
                                     function chooseThumb () {
                                         if (model.data.is_self) {
                                             return ""
-                                        } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "") {
+                                        } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "" || model.data.thumbnail == "default") {
                                             return "link.png"
                                         } else {
                                             return model.data.thumbnail
@@ -394,7 +423,7 @@ MainView {
                                 Text {
                                     id: alttext
                                     anchors.centerIn: parent
-                                    opacity: (model.data.is_self) ? .6 : 0
+                                    opacity: (model.data.is_self) ? .4 : 0
                                     text: "Aa+"
                                     font.pixelSize: 22
                                 }
@@ -492,7 +521,7 @@ MainView {
 
                                                     Rectangle {
                                                         height: (parent.width < parent.height) ? parent.width : parent.height
-                                                        width: height
+                                                        width: parent.width
                                                         color: Js.getBackgroundColor()
 
                                                         anchors.left: parent.left
@@ -555,7 +584,7 @@ MainView {
 
                                                     Rectangle {
                                                         height: (parent.width < parent.height) ? parent.width : parent.height //smallest of width and height
-                                                        width: height
+                                                        width: parent.width
                                                         color: Js.getBackgroundColor()
 
                                                         anchors.left: parent.left
@@ -609,7 +638,8 @@ MainView {
                                                 }
                                             }
                                             Rectangle {
-                                                width: 3 * parent.width / 5
+                                                id: backid
+                                                width: 2 * parent.width / 5
                                                 height: parent.height
                                                 color: Js.getBackgroundColor()
 
@@ -626,7 +656,7 @@ MainView {
                                             }
 
                                             Rectangle {
-                                                width: parent.width / 5
+                                                width: 2 * parent.width / 5
                                                 height: parent.height
                                                 color: Js.getBackgroundColor()
 
@@ -663,7 +693,7 @@ MainView {
                                     }
 
                                     transitions: Transition {
-                                        NumberAnimation { target: rotation; property: "angle"; duration: 200 }
+                                        NumberAnimation { target: rotation; property: "angle"; duration: (Storage.getSetting("flippages") != "true")? 0 : 200 }
                                     }
 
                                     function flip () {
@@ -1142,7 +1172,15 @@ MainView {
 
                             Column {
                                 anchors.fill:parent
-
+                                id: subredditColumn
+                                function stripSlashes (text) {
+                                    var split = text.toLowerCase().split("/")
+                                    var i = 0
+                                    for (; split.length; i++) {
+                                        if ( split[i] !== "" && split[i] !== "r") break
+                                    }
+                                    return split[i]
+                                }
 
                                 ListItem.Empty {
                                     width: parent.width
@@ -1156,7 +1194,7 @@ MainView {
 
                                         text: (Storage.getSetting("sub1").toString().length) ? Storage.getSetting("sub1") : "ubuntu"
 
-                                        onTextChanged: Storage.setSetting("sub1", text)
+                                        onTextChanged: Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
 
                                         enabled: true
 
@@ -1175,10 +1213,7 @@ MainView {
 
                                         text: (Storage.getSetting("sub2").toString().length) ? Storage.getSetting("sub2") : "funny"
 
-                                        onTextChanged: {
-                                            sub2.text = text
-                                            Storage.setSetting("sub2", text)
-                                        }
+                                        onTextChanged: Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
 
                                         enabled: true
 
@@ -1197,10 +1232,7 @@ MainView {
 
                                         text: (Storage.getSetting("sub3").toString().length) ? Storage.getSetting("sub3") : "pics"
 
-                                        onTextChanged: {
-                                            sub3.text = text
-                                            Storage.setSetting("sub3", text)
-                                        }
+                                        onTextChanged: Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
 
                                         enabled: true
 
@@ -1219,10 +1251,8 @@ MainView {
 
                                         text: (Storage.getSetting("sub4").toString().length) ? Storage.getSetting("sub4") : "gifs"
 
-                                        onTextChanged: {
-                                            sub4.text = text
-                                            Storage.setSetting("sub4", text)
-                                        }
+                                        onTextChanged: Storage.setSetting("sub4", subredditColumn.stripSlashes(text))
+
 
                                         enabled: true
 
