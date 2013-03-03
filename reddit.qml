@@ -444,6 +444,7 @@ MainView {
                                     id: alttext
                                     anchors.centerIn: parent
                                     opacity: (model.data.is_self) ? .4 : 0
+                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
                                     text: "Aa+"
                                     font.pixelSize: 22
                                 }
@@ -451,8 +452,10 @@ MainView {
                                     id: nsfwtext
                                     anchors.centerIn: parent
                                     opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
+                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                    font.bold: true
                                     text: "nsfw"
-                                    font.pixelSize: 22
+                                    font.pixelSize: 18
                                 }
 
                                 MouseArea {
