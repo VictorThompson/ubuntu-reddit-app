@@ -891,7 +891,7 @@ MainView {
                                 Storage.setSetting("sub3", "linux")
                                 Storage.setSetting("sub4", "ubuntuphone")
                                 Storage.setSetting("accountname", "")
-                                Storage.setSetting("passwd", "")
+                                Storage.setSetting("password", "")
                                 reloadTabs()
                             }
                             numberfetchedposts.selectedIndex = parseInt(Storage.getSetting("numberfetchedposts"))
