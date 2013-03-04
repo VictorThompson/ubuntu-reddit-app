@@ -304,7 +304,39 @@ MainView {
 
                         onTriggered: {
                             if (flipablelink.flipped) {
-                                console.log("upvote")
+                                var http = new XMLHttpRequest()
+                                var voteurl = "http://www.reddit.com/api/vote"
+                                var direction = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? "0" : "1"
+                                var params = "dir=" + direction + "&id=" + backsidelink.thingname + "&uh="+Storage.getSetting("userhash")+"&api_type=json";
+                                http.open("POST", voteurl, true);
+                                console.debug(params)
+
+                                // Send the proper header information along with the request
+                                http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                http.setRequestHeader("Content-length", params.length);
+                                http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
+                                http.setRequestHeader("Connection", "close");
+
+                                http.onreadystatechange = function() {
+                                    if (http.readyState == 4) {
+                                        if (http.status == 200) {
+                                            console.debug(http.responseText)
+                                            var jsonresponse = JSON.parse(http.responseText)
+                                            if (jsonresponse.json !== undefined) {
+                                                console.debug("error")
+                                            } else {
+                                                console.debug("Upvoted!")
+                                                backsidelink.likes = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? null : true
+                                                tools.children[4].iconSource = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? "upvoteEmpty.png" : "upvote.png"
+                                                tools.children[5].iconSource = "downvoteEmpty.png"
+
+                                            }
+                                        } else {
+                                            console.debug("error: " + http.status)
+                                        }
+                                    }
+                                }
+                                http.send(params);
                             } else {
                                 subreddittab.url = "/"
                                 reloadTabs()
@@ -321,7 +353,38 @@ MainView {
 
                         onTriggered: {
                             if (flipablelink.flipped) {
-                                console.log("downvote")
+                                var http = new XMLHttpRequest()
+                                var voteurl = "http://www.reddit.com/api/vote"
+                                var direction = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? "0" : "-1"
+                                var params = "dir=" + direction + "&id=" + backsidelink.thingname+"&uh=" + Storage.getSetting("userhash")+"&api_type=json";
+                                http.open("POST", voteurl, true);
+                                console.debug(params)
+
+                                // Send the proper header information along with the request
+                                http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                http.setRequestHeader("Content-length", params.length);
+                                http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
+                                http.setRequestHeader("Connection", "close");
+
+                                http.onreadystatechange = function() {
+                                    if (http.readyState == 4) {
+                                        if (http.status == 200) {
+                                            console.debug(http.responseText)
+                                            var jsonresponse = JSON.parse(http.responseText)
+                                            if (jsonresponse.json !== undefined) {
+                                                console.debug("error")
+                                            } else {
+                                                console.debug("Downvoted!")
+                                                backsidelink.likes = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? null : false
+                                                tools.children[4].iconSource = "upvoteEmpty.png"
+                                                tools.children[5].iconSource = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? "downvoteEmpty.png" : "downvote.png"
+                                            }
+                                        } else {
+                                            console.debug("error: " + http.status)
+                                        }
+                                    }
+                                }
+                                http.send(params);
                             } else {
                                 tabs.selectedTabIndex++
                             }
@@ -342,6 +405,15 @@ MainView {
                                 }
                             } else if (flipablelink.flipped) {
                                 console.log("comments")
+                                commentrectangle.loadPage(backsidelink.permalink, backsidelink.title)
+                                backsidelink.commentpage = true
+                                tools.children[4].visible = false
+                                tools.children[5].visible = false
+                                tools.children[6].visible = true
+                                tools.children[6].text = "previous"
+                                tools.children[6].enabled = false
+                                tools.children[6].iconSource = Qt.resolvedUrl("previous.png")
+                                tools.back.visible = true
                             } else {
                                 login()
                             }
@@ -368,7 +440,7 @@ MainView {
                             tools.children[5].iconSource = Qt.resolvedUrl("settings.png")
                             tools.children[6].visible = true
                             tools.children[6].enabled = true
-                            tools.children[6].text = "login"
+                            tools.children[6].text = (Storage.getSetting("userhash") === "1") ? "login": "logout"
                             tools.children[6].iconSource = Qt.resolvedUrl("avatar.png")
                             tools.back.visible = false
                         }
@@ -511,25 +583,30 @@ MainView {
                                     anchors.fill: parent
                                     onClicked: {
                                         if (model.data.is_self) {
-                                            false
+                                            // TODO: view just the selftext, not the actual url
+                                            webview.url = model.data.url
                                         } else {
                                             webview.url = model.data.url
-                                            flipablelink.flipped = true
-                                            backsidelink.commentpage = false
-                                            tools.children[0].visible = false
-                                            tools.children[1].visible = false
-                                            tools.children[2].visible = false
-                                            tools.children[3].visible = false
-                                            tools.children[4].text = "upvote"
-                                            tools.children[4].iconSource = Qt.resolvedUrl("upvoteEmpty.png")
-                                            tools.children[5].text = "downvote"
-                                            tools.children[5].iconSource = Qt.resolvedUrl("downvoteEmpty.png")
-                                            tools.children[6].text = "comments"
-                                            tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
-                                            tools.back.visible = true
-                                            frontsideitem.color = Js.getDimmedBackgroundColor()
-                                            seenit.opacity = 1
                                         }
+                                        flipablelink.flipped = true
+                                        backsidelink.commentpage = false
+                                        backsidelink.permalink = model.data.permalink
+                                        backsidelink.title = model.data.title
+                                        backsidelink.likes = model.data.likes
+                                        backsidelink.thingname = model.data.name
+                                        tools.children[0].visible = false
+                                        tools.children[1].visible = false
+                                        tools.children[2].visible = false
+                                        tools.children[3].visible = false
+                                        tools.children[4].text = "upvote"
+                                        tools.children[4].iconSource = Qt.resolvedUrl((model.data.likes === true) ? "upvote.png" : "upvoteEmpty.png")
+                                        tools.children[5].text = "downvote"
+                                        tools.children[5].iconSource = Qt.resolvedUrl((model.data.likes === false) ?  "downvote.png" : "downvoteEmpty.png")
+                                        tools.children[6].text = "comments"
+                                        tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
+                                        tools.back.visible = true
+                                        frontsideitem.color = Js.getDimmedBackgroundColor()
+                                        seenit.opacity = 1
                                     }
                                     enabled: !flipablelink.flipped
                                 }
@@ -584,7 +661,30 @@ MainView {
                                             anchors.fill: parent
 
                                             enabled: !itemflipable.flipped
-                                            onClicked: itemflipable.flip()
+                                            onClicked: {
+                                                // Flip item?
+                                                // itemflipable.flip()
+
+                                                // Go straight to comments?
+                                                flipablelink.flip()
+                                                commentrectangle.loadPage(model.data.permalink, model.data.title)
+                                                backsidelink.commentpage = true
+                                                backsidelink.permalink = model.data.permalink
+                                                backsidelink.title = model.data.title
+                                                backsidelink.likes = model.data.likes
+                                                backsidelink.thingname = model.data.name
+                                                tools.children[0].visible = false
+                                                tools.children[1].visible = false
+                                                tools.children[2].visible = false
+                                                tools.children[3].visible = false
+                                                tools.children[4].visible = false
+                                                tools.children[5].visible = false
+                                                tools.children[6].visible = true
+                                                tools.children[6].text = "previous"
+                                                tools.children[6].enabled = false
+                                                tools.children[6].iconSource = Qt.resolvedUrl("previous.png")
+                                                tools.back.visible = true
+                                            }
                                         }
                                     }
 
@@ -758,6 +858,10 @@ MainView {
                                                         flipablelink.flip()
                                                         commentrectangle.loadPage(model.data.permalink, model.data.title)
                                                         backsidelink.commentpage = true
+                                                        backsidelink.permalink = model.data.permalink
+                                                        backsidelink.title = model.data.title
+                                                        backsidelink.likes = model.data.likes
+                                                        backsidelink.thingname = model.data.name
                                                         tools.children[0].visible = false
                                                         tools.children[1].visible = false
                                                         tools.children[2].visible = false
@@ -806,6 +910,10 @@ MainView {
                     id: backsidelink
 
                     property bool commentpage: false
+                    property bool likes: null
+                    property string permalink: ""
+                    property string title: ""
+                    property string thingname: ""
                     property string urlviewing: ""
 
                     anchors.fill: parent
@@ -963,6 +1071,7 @@ MainView {
                         // initialize settings
                         console.debug("settings not initialized on subreddit load")
                     }
+                    Storage.setSetting("userhash", 1)
                 }
 
                 tools: ToolbarActions {
@@ -1289,6 +1398,7 @@ MainView {
                                                             // store this user mod hash to pass to later api methods that require you to be logged in
                                                             Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
                                                             loginstatus.text = "log in successful"
+                                                            toolbar.children[6].text = "logout"
                                                             console.debug("success")
                                                             reloadTabs()
                                                         }
@@ -1429,40 +1539,48 @@ MainView {
     }
 
     function login() {
-        var http = new XMLHttpRequest()
-        var loginurl = "https://ssl.reddit.com/api/login";
-        var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
-        http.open("POST", loginurl, true);
+        if (tools.children[6].text === "logout") {
+            Storage.setSetting("userhash", 1)
+            tools.children[6].text = "login"
+            reloadTabs()
+        } else {
 
-        // Only display params, with password, if needed.
-        // console.debug(params)
+            var http = new XMLHttpRequest()
+            var loginurl = "https://ssl.reddit.com/api/login";
+            var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
+            http.open("POST", loginurl, true);
 
-        // Send the proper header information along with the request
-        http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        http.setRequestHeader("Content-length", params.length);
-        http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
-        http.setRequestHeader("Connection", "close");
+            // Only display params, with password, if needed.
+            // console.debug(params)
 
-        http.onreadystatechange = function() {
-            if (http.readyState == 4) {
-                if (http.status == 200) {
-                    console.debug(http.responseText)
-                    var jsonresponse = JSON.parse(http.responseText)
-                    if (jsonresponse.json.data === undefined) {
-                        console.debug("error")
-                        dialog.showLoginPrompt()
+            // Send the proper header information along with the request
+            http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            http.setRequestHeader("Content-length", params.length);
+            http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
+            http.setRequestHeader("Connection", "close");
+
+            http.onreadystatechange = function() {
+                if (http.readyState == 4) {
+                    if (http.status == 200) {
+                        console.debug(http.responseText)
+                        var jsonresponse = JSON.parse(http.responseText)
+                        if (jsonresponse.json.data === undefined) {
+                            console.debug("error")
+                            dialog.showLoginPrompt()
+                        } else {
+                            // store this user mod hash to pass to later api methods that require you to be logged in
+                            Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
+                            console.debug("success")
+                            tools.children[6].text = "logout"
+                            reloadTabs()
+                        }
                     } else {
-                        // store this user mod hash to pass to later api methods that require you to be logged in
-                        Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
-                        console.debug("success")
-                        reloadTabs()
+                        console.debug("error: " + http.status)
+                        dialog.showLoginPrompt()
                     }
-                } else {
-                    console.debug("error: " + http.status)
-                    dialog.showLoginPrompt()
                 }
             }
+            http.send(params);
         }
-        http.send(params);
     }
 }
