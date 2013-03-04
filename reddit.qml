@@ -236,6 +236,7 @@ MainView {
 
                 tools: ToolbarActions {
                     id: toolbar
+                    active: true
                     function chooseIcon (text) {
                         var test = text.toLowerCase().toString()
                         if (test.match(".*ubuntu.*")) {
@@ -246,12 +247,37 @@ MainView {
                             return "reddit.png"
                         }
                     }
+
+                    Action {
+                        objectName: "settings"
+
+                        visible: true
+                        text: "settings"
+                        iconSource: Qt.resolvedUrl("settings.png")
+
+                        onTriggered: {
+                            tabs.selectedTabIndex++
+                        }
+                    }
+
+                    Action {
+                        objectName: "home"
+
+                        text: "home"
+                        iconSource: Qt.resolvedUrl("reddit.png")
+
+                        onTriggered: {
+                            subreddittab.url = "/"
+                            reloadTabs()
+                        }
+                    }
+
                     Action {
                         objectName: "sub1action"
 
                         visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub1") !== null
-                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub1").toString() : "ubuntu"
-                        iconSource: toolbar.chooseIcon(text)
+                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub1").toString() : "linux"
+                        iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
 
                         onTriggered: {
                             subreddittab.url = "/r/" + text
@@ -263,7 +289,7 @@ MainView {
 
                         visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub2") !== null
                         text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub2").toString() : "pics"
-                        iconSource: toolbar.chooseIcon(text)
+                        iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
 
                         onTriggered: {
                             subreddittab.url = "/r/" + text
@@ -274,20 +300,8 @@ MainView {
                         objectName: "sub3action"
 
                         visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub3") !== null
-                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub3").toString() : "linux"
-                        iconSource: toolbar.chooseIcon(text)
-
-                        onTriggered: {
-                            subreddittab.url = "/r/" + text
-                            reloadTabs()
-                        }
-                    }
-                    Action {
-                        objectName: "sub4action"
-
-                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub4") !== null
-                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub4").toString() : "ubuntuphone"
-                        iconSource: toolbar.chooseIcon(text)
+                        text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub3").toString() : "ubuntuphone"
+                        iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
 
                         onTriggered: {
                             subreddittab.url = "/r/" + text
@@ -305,17 +319,6 @@ MainView {
                             dialog.showSubredditPrompt()
                         }
                     }
-                    Action {
-                        objectName: "home"
-
-                        text: "home"
-                        iconSource: Qt.resolvedUrl("reddit.png")
-
-                        onTriggered: {
-                            subreddittab.url = "/"
-                            reloadTabs()
-                        }
-                    }
 
                     Action {
                         objectName: "action"
@@ -327,6 +330,7 @@ MainView {
                             login()
                         }
                     }
+                    lock: true
                 }
 
                 Column {
@@ -687,6 +691,7 @@ MainView {
                                                         flipablelink.flip()
                                                         commentrectangle.loadPage(model.data.permalink, model.data.title)
                                                         backsidelink.commentpage = true
+                                                        tools.active = false
                                                     }
                                                 }
                                             }
@@ -885,6 +890,7 @@ MainView {
                         width: parent.width
                         onClicked: {
                             flipablelink.flip()
+                            tools.active = true
                             webview.url = "about:blank"
                         }
                     }
@@ -895,461 +901,439 @@ MainView {
         // Second tab begins here
         Tab {
             id: settingstab
-
             anchors.fill: parent
-
             title: "Settings"
-
-            MyFlipable {
-                id: flipable
-                anchors.fill: parent
-
-                flipsvertically: false
-
-                front: Rectangle {
-                    id: frontside
-                    anchors.fill: parent
-
-                    color: Js.getBackgroundColor()
-                    enabled: !flipable.flipped
-
-                    Column {
-                        anchors.fill: parent
-
-                        Component.onCompleted: {
-                            Storage.initialize()
-                            console.debug("INITIALIZED")
-                            if (Storage.getSetting("initialized") !== "true") {
-                                // initialize settings
-                                console.debug("reset settings")
-                                Storage.setSetting("initialized", "true")
-                                Storage.setSetting("numberfetchedposts", "2")
-                                Storage.setSetting("numberfetchedcomments", "2")
-                                Storage.setSetting("enablethumbnails", "true")
-                                Storage.setSetting("thumbnailsonleftside", "true")
-                                Storage.setSetting("rounderthumbnails", "false")
-                                Storage.setSetting("postheight", "0")
-                                Storage.setSetting("nightmode", "false")
-                                Storage.setSetting("flippages", "true")
-                                Storage.setSetting("autologin", "false")
-                                Storage.setSetting("sub1", "ubuntu")
-                                Storage.setSetting("sub2", "pics")
-                                Storage.setSetting("sub3", "linux")
-                                Storage.setSetting("sub4", "ubuntuphone")
-                                Storage.setSetting("accountname", "")
-                                Storage.setSetting("password", "")
-                                reloadTabs()
-                            }
-                            numberfetchedposts.selectedIndex = parseInt(Storage.getSetting("numberfetchedposts"))
-                            numberfetchedcomments.selectedIndex = parseInt(Storage.getSetting("numberfetchedcomments"))
-                            // account...
-                            // subreddits...
-                            enablethumbnails.loadValue()
-                            thumbnailsonleftside.loadValue()
-                            rounderthumbnails.loadValue()
-                            postheight.selectedIndex = parseInt(Storage.getSetting("postheight"))
-                            nightmode.loadValue()
-                            flippages.loadValue()
-                            autologin.loadValue()
-                            sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
-                            sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
-                            sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
-                            sub4.text = (Storage.getSetting("sub4") === null) ? "" : Storage.getSetting("sub4")
-                        }
-
-                        ListItem.SingleControl {
-                            control: Button {
-                                height: units.gu(4)
-                                width: parent.width * 3 / 4
-                                anchors.topMargin: units.gu(1)
-                                anchors.bottomMargin: units.gu(1)
-                                anchors.centerIn: parent
-
-                                text: "Account..."
-
-                                onClicked: backside.loadLogin()
-                            }
-                        }
-
-                        ListItem.SingleControl {
-                            control: Button {
-                                height: units.gu(4)
-                                width: parent.width * 3 / 4
-                                anchors.topMargin: units.gu(1)
-                                anchors.bottomMargin: units.gu(1)
-
-                                text: "Subreddits..."
-
-                                onClicked: backside.loadSubreddits()
-                            }
-                        }
-
-                        ListItem.ValueSelector {
-                            id: numberfetchedposts
-                            text: "Number of fetched posts"
-
-                            property string value: values[selectedIndex]
-
-                            values: Js.getFetchedArray()
-
-                            onSelectedIndexChanged: Storage.setSetting("numberfetchedposts", selectedIndex)
-                        }
-
-                        ListItem.ValueSelector {
-                            id: postheight
-                            text: "Font size of posts"
-
-                            values: Js.getPostHeightArray()
-
-                            onSelectedIndexChanged: Storage.setSetting("postheight", selectedIndex)
-                        }
-
-                        ListItem.ValueSelector {
-                            id: numberfetchedcomments
-                            text: "Number of fetched comments"
-
-                            values: Js.getFetchedArray()
-
-                            onSelectedIndexChanged: Storage.setSetting("numberfetchedcomments", selectedIndex)
-                        }
-
-                        ListItem.Standard {
-                            text: "Enable thumbnails"
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: enablethumbnails
-                                name: "enablethumbnails"
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Display thumbnails on left side"
-                            enabled: enablethumbnails.checked
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: thumbnailsonleftside
-                                name: "thumbnailsonleftside"
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Rounder thumbnails"
-                            enabled: enablethumbnails.checked
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: rounderthumbnails
-                                name: "rounderthumbnails"
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Flip pages"
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: flippages
-                                name: "flippages"
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Night mode"
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: nightmode
-                                name: "nightmode"
-                            }
-                        }
-                        ListItem.Standard {
-                            //width: parent.width
-                            height: units.gu(5)
-
-                            text: "Note: app will need to be restarted\nfor changes to take effect."
-                            opacity: .6
-                        }
+            page: Page {
+                id: settingspage
+                anchors.margins: units.gu(4)
+                Component.onCompleted: {
+                    if (Storage.getSetting("initialized") !== "true") {
+                        // initialize settings
+                        console.debug("settings not initialized on subreddit load")
                     }
                 }
 
-                back: Rectangle {
-                    id: backside
+                tools: ToolbarActions {
+                    id: settingstoolbar
+                    active: true
 
-                    anchors.fill: parent
-                    color: Js.getBackgroundColor()
-                    enabled: flipable.flipped
+                    Action {
+                        objectName: "account"
 
-                    function loadLogin () {
-                        loginpage.visible = true
-                        subredditlist.visible = false
+                        visible: true
+                        text: "account"
+                        iconSource: Qt.resolvedUrl("avatar.png")
 
-                        flipable.flipped = true
-                    }
-
-                    function loadSubreddits () {
-                        loginpage.visible = false
-                        subredditlist.visible = true
-
-                        flipable.flipped = true
-                    }
-
-                    property bool commentpage: false
-                    property string urlviewing: ""
-
-                    Button {
-                        id: backbutton
-                        text: "Go back"
-                        height: units.gu(4)
-                        width: parent.width
-                        onClicked: {
-                            flipable.flip()
+                        onTriggered: {
+                            backside.loadLogin()
                         }
                     }
 
-                    Rectangle {
-                        height: parent.height - backbutton.height
-                        width: parent.width
-                        anchors.bottom: parent.bottom
-                        color: parent.color
+                    Action {
+                        objectName: "subreddits"
+
+                        visible: true
+                        text: "subreddits"
+                        iconSource: Qt.resolvedUrl("reddit.png")
+
+                        onTriggered: {
+                            backside.loadSubreddits()
+                        }
+                    }
+
+                    back {
+                        visible: true
+                        onTriggered: {
+                            if (flipable.flipped) {
+                                flipable.flip()
+                            } else {
+                                tabs.selectedTabIndex--
+                            }
+                        }
+                    }
+                    lock: true
+                }
+
+                MyFlipable {
+                    id: flipable
+                    anchors.fill: parent
+
+                    flipsvertically: false
+
+                    front: Rectangle {
+                        id: frontside
+                        anchors.fill: parent
+
+                        color: Js.getBackgroundColor()
+                        enabled: !flipable.flipped
+
+                        Column {
+                            anchors.fill: parent
+
+                            Component.onCompleted: {
+                                Storage.initialize()
+                                console.debug("INITIALIZED")
+                                if (Storage.getSetting("initialized") !== "true") {
+                                    // initialize settings
+                                    console.debug("reset settings")
+                                    Storage.setSetting("initialized", "true")
+                                    Storage.setSetting("numberfetchedposts", "2")
+                                    Storage.setSetting("numberfetchedcomments", "2")
+                                    Storage.setSetting("enablethumbnails", "true")
+                                    Storage.setSetting("thumbnailsonleftside", "true")
+                                    Storage.setSetting("rounderthumbnails", "false")
+                                    Storage.setSetting("postheight", "0")
+                                    Storage.setSetting("nightmode", "false")
+                                    Storage.setSetting("flippages", "true")
+                                    Storage.setSetting("autologin", "false")
+                                    Storage.setSetting("sub1", "linux")
+                                    Storage.setSetting("sub2", "pics")
+                                    Storage.setSetting("sub3", "ubuntuphone")
+                                    Storage.setSetting("accountname", "")
+                                    Storage.setSetting("password", "")
+                                    reloadTabs()
+                                }
+                                numberfetchedposts.selectedIndex = parseInt(Storage.getSetting("numberfetchedposts"))
+                                numberfetchedcomments.selectedIndex = parseInt(Storage.getSetting("numberfetchedcomments"))
+                                // account...
+                                // subreddits...
+                                enablethumbnails.loadValue()
+                                thumbnailsonleftside.loadValue()
+                                rounderthumbnails.loadValue()
+                                postheight.selectedIndex = parseInt(Storage.getSetting("postheight"))
+                                nightmode.loadValue()
+                                flippages.loadValue()
+                                autologin.loadValue()
+                                sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
+                                sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
+                                sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
+                            }
+
+                            ListItem.ValueSelector {
+                                id: numberfetchedposts
+                                text: "Number of fetched posts"
+
+                                property string value: values[selectedIndex]
+
+                                values: Js.getFetchedArray()
+
+                                onSelectedIndexChanged: Storage.setSetting("numberfetchedposts", selectedIndex)
+                            }
+
+                            ListItem.ValueSelector {
+                                id: postheight
+                                text: "Font size of posts"
+
+                                values: Js.getPostHeightArray()
+
+                                onSelectedIndexChanged: Storage.setSetting("postheight", selectedIndex)
+                            }
+
+                            ListItem.ValueSelector {
+                                id: numberfetchedcomments
+                                text: "Number of fetched comments"
+
+                                values: Js.getFetchedArray()
+
+                                onSelectedIndexChanged: Storage.setSetting("numberfetchedcomments", selectedIndex)
+                            }
+
+                            ListItem.Standard {
+                                text: "Enable thumbnails"
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: enablethumbnails
+                                    name: "enablethumbnails"
+                                }
+                            }
+
+                            ListItem.Standard {
+                                text: "Display thumbnails on left side"
+                                enabled: enablethumbnails.checked
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: thumbnailsonleftside
+                                    name: "thumbnailsonleftside"
+                                }
+                            }
+
+                            ListItem.Standard {
+                                text: "Rounder thumbnails"
+                                enabled: enablethumbnails.checked
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: rounderthumbnails
+                                    name: "rounderthumbnails"
+                                }
+                            }
+
+                            ListItem.Standard {
+                                text: "Flip pages"
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: flippages
+                                    name: "flippages"
+                                }
+                            }
+
+                            ListItem.Standard {
+                                text: "Night mode"
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: nightmode
+                                    name: "nightmode"
+                                }
+                            }
+                            ListItem.Standard {
+                                //width: parent.width
+                                height: units.gu(5)
+
+                                text: "Note: app will need to be restarted\nfor changes to take effect."
+                                opacity: .6
+                            }
+                        }
+                    }
+
+                    back: Rectangle {
+                        id: backside
+
+                        anchors.fill: parent
+                        color: Js.getBackgroundColor()
+                        enabled: flipable.flipped
+
+                        function loadLogin () {
+                            loginpage.visible = true
+                            subredditlist.visible = false
+
+                            flipable.flipped = true
+                        }
+
+                        function loadSubreddits () {
+                            loginpage.visible = false
+                            subredditlist.visible = true
+
+                            flipable.flipped = true
+                        }
+
+                        property bool commentpage: false
+                        property string urlviewing: ""
 
                         Rectangle {
-                            id: loginpage
-                            opacity: 1
-
-                            anchors.fill: parent
+                            height: parent.height // - backbutton.height
+                            width: parent.width
+                            anchors.bottom: parent.bottom
                             color: parent.color
 
-                            Column {
-                                anchors.fill:parent
+                            Rectangle {
+                                id: loginpage
+                                opacity: 1
 
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: accounttextfield.height
+                                anchors.fill: parent
+                                color: parent.color
 
-                                    TextField {
-                                        id: accounttextfield
+                                Column {
+                                    anchors.fill:parent
 
-                                        width: parent.width
-                                        height: units.gu(8)
-
-                                        placeholderText: "username"
-                                        text: (Storage.getSetting("accountname") !== null) ? Storage.getSetting("accountname") : null
-
-                                        onTextChanged: Storage.setSetting("accountname", text)
-
-                                        enabled: true
-
-                                        font.pixelSize: parent.height / 2
-                                    }
-                                }
-
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: passwordtextfield.height
-
-                                    TextField {
-                                        id: passwordtextfield
-
+                                    ListItem.Empty {
                                         width: parent.width
                                         height: accounttextfield.height
 
-                                        placeholderText: "password"
-                                        text: (Storage.getSetting("password") !== null) ? Storage.getSetting("password") : null
+                                        TextField {
+                                            id: accounttextfield
 
-                                        onTextChanged: Storage.setSetting("password", text)
+                                            width: parent.width
+                                            height: units.gu(8)
 
-                                        enabled: true
+                                            placeholderText: "username"
+                                            text: (Storage.getSetting("accountname") !== null) ? Storage.getSetting("accountname") : null
 
-                                        echoMode: TextInput.Password
-                                        font.pixelSize: parent.height / 2
+                                            onTextChanged: Storage.setSetting("accountname", text)
+
+                                            enabled: true
+
+                                            font.pixelSize: parent.height / 2
+                                        }
                                     }
-                                }
-                                Button {
-                                    id: loginbutton
-                                    text: "login"
-                                    height: units.gu(4)
-                                    width: parent.width
-                                    onClicked: {
-                                        loginstatus.text = "waiting..."
 
-                                        var http = new XMLHttpRequest()
-                                        var loginurl = "https://ssl.reddit.com/api/login";
-                                        var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
-                                        http.open("POST", loginurl, true);
+                                    ListItem.Empty {
+                                        width: parent.width
+                                        height: passwordtextfield.height
 
-                                        // Only display params, with password, if needed.
-                                        // console.debug(params)
+                                        TextField {
+                                            id: passwordtextfield
 
-                                        // Send the proper header information along with the request
-                                        http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                                        http.setRequestHeader("Content-length", params.length);
-                                        http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
-                                        http.setRequestHeader("Connection", "close");
+                                            width: parent.width
+                                            height: accounttextfield.height
 
-                                        http.onreadystatechange = function() {
-                                            if (http.readyState == 4) {
-                                                if (http.status == 200) {
-                                                    console.debug(http.responseText)
-                                                    var jsonresponse = JSON.parse(http.responseText)
-                                                    if (jsonresponse.json.data === undefined) {
-                                                        loginstatus.text = "failed, try again" + "\n" + jsonresponse["json"]["errors"]
-                                                        console.debug("error")
+                                            placeholderText: "password"
+                                            text: (Storage.getSetting("password") !== null) ? Storage.getSetting("password") : null
+
+                                            onTextChanged: Storage.setSetting("password", text)
+
+                                            enabled: true
+
+                                            echoMode: TextInput.Password
+                                            font.pixelSize: parent.height / 2
+                                        }
+                                    }
+                                    Button {
+                                        id: loginbutton
+                                        text: "login"
+                                        height: units.gu(4)
+                                        width: parent.width
+                                        onClicked: {
+                                            loginstatus.text = "waiting..."
+
+                                            var http = new XMLHttpRequest()
+                                            var loginurl = "https://ssl.reddit.com/api/login";
+                                            var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
+                                            http.open("POST", loginurl, true);
+
+                                            // Only display params, with password, if needed.
+                                            // console.debug(params)
+
+                                            // Send the proper header information along with the request
+                                            http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                            http.setRequestHeader("Content-length", params.length);
+                                            http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
+                                            http.setRequestHeader("Connection", "close");
+
+                                            http.onreadystatechange = function() {
+                                                if (http.readyState == 4) {
+                                                    if (http.status == 200) {
+                                                        console.debug(http.responseText)
+                                                        var jsonresponse = JSON.parse(http.responseText)
+                                                        if (jsonresponse.json.data === undefined) {
+                                                            loginstatus.text = "failed, try again" + "\n" + jsonresponse["json"]["errors"]
+                                                            console.debug("error")
+                                                        } else {
+                                                            // store this user mod hash to pass to later api methods that require you to be logged in
+                                                            Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
+                                                            loginstatus.text = "log in successful"
+                                                            console.debug("success")
+                                                            reloadTabs()
+                                                        }
                                                     } else {
-                                                        // store this user mod hash to pass to later api methods that require you to be logged in
-                                                        Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
-                                                        loginstatus.text = "log in successful"
-                                                        console.debug("success")
-                                                        reloadTabs()
+                                                        console.debug("error: " + http.status)
+                                                        loginstatus.text = "failed, try again"
                                                     }
-                                                } else {
-                                                    console.debug("error: " + http.status)
-                                                    loginstatus.text = "failed, try again"
                                                 }
                                             }
+                                            http.send(params);
                                         }
-                                        http.send(params);
                                     }
-                                }
-                                ListItem.Standard {
-                                    text: "Automatically log in when app starts"
-                                    height: units.gu(5)
+                                    ListItem.Standard {
+                                        text: "Automatically log in when app starts"
+                                        height: units.gu(5)
 
-                                    control: SettingSwitch {
-                                        anchors.centerIn: parent
-                                        id: autologin
-                                        name: "autologin"
+                                        control: SettingSwitch {
+                                            anchors.centerIn: parent
+                                            id: autologin
+                                            name: "autologin"
+                                        }
                                     }
-                                }
-                                ListItem.Standard {
-                                    id: loginstatus
-                                    text: ""
-                                    enabled: true
+                                    ListItem.Standard {
+                                        id: loginstatus
+                                        text: ""
+                                        enabled: true
+                                    }
                                 }
                             }
-                        }
-                        Rectangle {
-                            id: subredditlist
+                            Rectangle {
+                                id: subredditlist
 
-                            anchors.fill: parent
-                            color: Js.getBackgroundColor()
+                                anchors.fill: parent
+                                color: Js.getBackgroundColor()
 
-                            Column {
-                                anchors.fill:parent
-                                id: subredditColumn
-                                function stripSlashes (text) {
-                                    var split = text.toLowerCase().split("/")
-                                    var i = 0
-                                    for (; split.length; i++) {
-                                        if ( split[i] !== "" && split[i] !== "r") break
+                                Column {
+                                    anchors.fill:parent
+                                    id: subredditColumn
+                                    function stripSlashes (text) {
+                                        var split = text.toLowerCase().split("/")
+                                        var i = 0
+                                        for (; split.length; i++) {
+                                            if ( split[i] !== "" && split[i] !== "r") break
+                                        }
+                                        return split[i]
                                     }
-                                    return split[i]
-                                }
 
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
-
-                                    TextField {
-                                        id: sub1
-
+                                    ListItem.Empty {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: Storage.getSetting("sub1")
-
-                                        onTextChanged: Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
-
-                                        enabled: true
-
-                                        font.pixelSize: parent.height / 2
+                                        TextField {
+                                            id: sub1
+                                            width: parent.width
+                                            height: units.gu(8)
+                                            text: Storage.getSetting("sub1")
+                                            onTextChanged: Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
+                                            enabled: true
+                                            font.pixelSize: parent.height / 2
+                                        }
                                     }
-                                }
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
 
-                                    TextField {
-                                        id: sub2
-
+                                    ListItem.Empty {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: Storage.getSetting("sub2")
-
-                                        onTextChanged: Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
-
-                                        enabled: true
-
-                                        font.pixelSize: parent.height / 2
+                                        TextField {
+                                            id: sub2
+                                            width: parent.width
+                                            height: units.gu(8)
+                                            text: Storage.getSetting("sub2")
+                                            onTextChanged: Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
+                                            enabled: true
+                                            font.pixelSize: parent.height / 2
+                                        }
                                     }
-                                }
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
 
-                                    TextField {
-                                        id: sub3
-
+                                    ListItem.Empty {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text:  Storage.getSetting("sub3")
-
-                                        onTextChanged: Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
-
-                                        enabled: true
-
-                                        font.pixelSize: parent.height / 2
+                                        TextField {
+                                            id: sub3
+                                            width: parent.width
+                                            height: units.gu(8)
+                                            text:  Storage.getSetting("sub3")
+                                            onTextChanged: Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
+                                            enabled: true
+                                            font.pixelSize: parent.height / 2
+                                        }
                                     }
-                                }
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
 
-                                    TextField {
-                                        id: sub4
-
+                                    ListItem.Empty {
                                         width: parent.width
                                         height: units.gu(8)
 
-                                        text: Storage.getSetting("sub4")
+                                        Text {
+                                            width: parent.width
+                                            id: subsmessage
+                                            anchors.bottom: parent.bottom
+                                            anchors.centerIn: parent
 
-                                        onTextChanged: Storage.setSetting("sub4", subredditColumn.stripSlashes(text))
+                                            //width: parent.width
+                                            height: units.gu(8)
+                                            color: (Storage.getSetting("nightmode") === "true") ? "#FFFFFF" : "#000000"
 
+                                            text: "Note: app will need to be restarted for changes to show up on the toolbar."
+                                            wrapMode: Text.WordWrap
 
-                                        enabled: true
+                                            enabled: true
+                                            opacity: .6
 
-                                        font.pixelSize: parent.height / 2
-                                    }
-                                }
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
-
-                                    Text {
-                                        width: parent.width
-                                        id: subsmessage
-                                        anchors.bottom: parent.bottom
-                                        anchors.centerIn: parent
-
-                                        //width: parent.width
-                                        height: units.gu(8)
-                                        color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
-
-                                        text: "Note: app will need to be restarted for changes to show up on the toolbar."
-                                        wrapMode: Text.WordWrap
-
-                                        enabled: true
-                                        opacity: .6
-
-                                        font.pixelSize: 14
+                                            font.pixelSize: 14
+                                        }
                                     }
                                 }
                             }
@@ -1358,27 +1342,6 @@ MainView {
                 }
             }
         }
-
-
-//        SubredditTab {url: "/r/all"} // reddit.com/r/all
-//        SubredditTab {url: "/r/funny"}
-//        SubredditTab {url: "/r/waterporn"}
-
-//        Tab {
-//            objectName: "Tab1"
-            
-//            title: i18n.tr("reddit")
-            
-//            // Tab content begins here
-//            page: Page {
-//                Column {
-//                    anchors.centerIn: parent
-//                    Label {
-//                        text: i18n.tr("Swipe from right to left to change tab.")
-//                    }
-//                }
-//            }
-//        }
     }
 
     function reloadTabs() {
