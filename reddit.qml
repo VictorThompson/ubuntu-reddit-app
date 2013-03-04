@@ -182,17 +182,17 @@ MainView {
                                 height: units.gu(4)
                                 width: parent.width / 2
                                 onClicked: {
+                                    subreddittab.url = "/"
                                     if (subreddittextfield.text !== "") {
                                         var split = subreddittextfield.text.split("/")
                                         var i = 0
                                         for (; split.length; i++) {
-                                            if ( split[i] !== "" && split[i] !== "r") break
+                                            if ( split[i] !== "" && split[i] !== null && split[i] !== "r") break
                                         }
-                                        subreddittab.url = "/r/" + split[i]
-                                    } else {
-                                        subreddittab.url = "/"
+                                        if (split[i] !== null && split.length > i && split[i].length > 0) {
+                                            subreddittab.url = "/r/" + split[i]
+                                        }
                                     }
-
                                     reloadTabs()
                                     dialog.hidePrompt()
                                 }
@@ -238,7 +238,7 @@ MainView {
                     id: toolbar
                     active: true
                     function chooseIcon (text) {
-                        var test = text.toLowerCase().toString()
+                        var test = (text === undefined) ? "" : text.toLowerCase().toString()
                         if (test.match(".*ubuntu.*")) {
                             return "ubuntu.png"
                         } else if (test.match(".*linux.*")) {
@@ -249,36 +249,11 @@ MainView {
                     }
 
                     Action {
-                        objectName: "settings"
-
-                        visible: true
-                        text: "settings"
-                        iconSource: Qt.resolvedUrl("settings.png")
-
-                        onTriggered: {
-                            tabs.selectedTabIndex++
-                        }
-                    }
-
-                    Action {
-                        objectName: "home"
-
-                        text: "home"
-                        iconSource: Qt.resolvedUrl("reddit.png")
-
-                        onTriggered: {
-                            subreddittab.url = "/"
-                            reloadTabs()
-                        }
-                    }
-
-                    Action {
                         objectName: "sub1action"
 
-                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub1") !== null
+                        visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub1") !== ""
                         text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub1").toString() : "linux"
                         iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
-
                         onTriggered: {
                             subreddittab.url = "/r/" + text
                             reloadTabs()
@@ -321,15 +296,67 @@ MainView {
                     }
 
                     Action {
-                        objectName: "action"
+                        objectName: "home"
+
+                        text: "home"
+                        iconSource: Qt.resolvedUrl("reddit.png")
+
+                        onTriggered: {
+                            subreddittab.url = "/"
+                            reloadTabs()
+                        }
+                    }
+
+                    Action {
+                        objectName: "settings"
+
+                        visible: true
+                        text: "settings"
+                        iconSource: Qt.resolvedUrl("settings.png")
+
+                        onTriggered: {
+                            tabs.selectedTabIndex++
+                        }
+                    }
+
+                    Action {
+                        objectName: "corneraction"
 
                         text: "login"
                         iconSource: Qt.resolvedUrl("avatar.png")
 
                         onTriggered: {
-                            login()
+                            if (flipablelink.flipped) {
+                                pagestack.pop()
+                                if (pagestack.depth === 1) {
+                                    enabled = false
+                                }
+                            } else {
+                                login()
+                            }
                         }
                     }
+
+                    back {
+                        visible: false
+                        text: "return"
+                        onTriggered: {
+                            flipablelink.flip()
+                            webview.url = "about:blank"
+                            if (tools.children[0].text !== "") tools.children[0].visible = true
+                            if (tools.children[1].text !== "") tools.children[1].visible = true
+                            if (tools.children[2].text !== "") tools.children[2].visible = true
+                            tools.children[3].visible = true
+                            tools.children[4].visible = true
+                            tools.children[5].visible = true
+                            tools.children[6].visible = true
+                            tools.children[6].enabled = true
+                            tools.children[6].text = "login"
+                            tools.children[6].iconSource = Qt.resolvedUrl("avatar.png")
+                            tools.back.visible = false
+                        }
+                    }
+
                     lock: true
                 }
 
@@ -462,7 +489,15 @@ MainView {
                                         } else {
                                             flipablelink.flipped = true
                                             backsidelink.commentpage = false
-                                            tools.active = false
+                                            //tools.active = false
+                                            tools.children[0].visible = false
+                                            tools.children[1].visible = false
+                                            tools.children[2].visible = false
+                                            tools.children[3].visible = false
+                                            tools.children[4].visible = false
+                                            tools.children[5].visible = false
+                                            tools.children[6].visible = false
+                                            tools.back.visible = true
                                             webview.url = model.data.url
                                         }
                                     }
@@ -692,7 +727,18 @@ MainView {
                                                         flipablelink.flip()
                                                         commentrectangle.loadPage(model.data.permalink, model.data.title)
                                                         backsidelink.commentpage = true
-                                                        tools.active = false
+                                                        //tools.active = false
+                                                        tools.children[0].visible = false
+                                                        tools.children[1].visible = false
+                                                        tools.children[2].visible = false
+                                                        tools.children[3].visible = false
+                                                        tools.children[4].visible = false
+                                                        tools.children[5].visible = false
+                                                        tools.children[6].visible = true
+                                                        tools.children[6].text = "parent"
+                                                        tools.children[6].enabled = false
+                                                        tools.children[6].iconSource = Qt.resolvedUrl("reddit.png")
+                                                        tools.back.visible = true
                                                     }
                                                 }
                                             }
@@ -744,7 +790,7 @@ MainView {
                         // why isn't this enabled?
                         // TODO: fix contents
 
-                        height: parent.height - linkbackbutton.height
+                        height: parent.height
                         width: parent.width
                         anchors.top: parent.top
 
@@ -756,7 +802,8 @@ MainView {
                             pagestack.clear()
                             rootpage.title = title
                             pagestack.push(rootpage)
-                            popstackbutton.visible = false
+                            tools.children[6].enabled = false
+                            tools.children[6].visible = true
                         }
 
                         JSONListModel {
@@ -798,7 +845,7 @@ MainView {
                                         onClicked: {
                                             if (model.data.replies !== "") {
                                                 pagestack.push(newpage, {commentsModel: model.data.replies.data.children})
-                                                popstackbutton.visible = true
+                                                tools.children[6].enabled = true
                                             }
                                         }
                                         Component.onCompleted: {
@@ -851,20 +898,6 @@ MainView {
                                 }
                             }
                         }
-                        Button {
-                            id: popstackbutton
-                            text: "back to parent comment"
-                            height: units.gu(4)
-                            visible: false
-                            width: parent.width
-                            anchors.bottom: parent.bottom
-                            onClicked: {
-                                pagestack.pop()
-                                if (pagestack.depth === 1) {
-                                    popstackbutton.visible = false
-                                }
-                            }
-                        }
                     }
 
                     Rectangle {
@@ -872,7 +905,7 @@ MainView {
                         opacity: (backsidelink.commentpage)? 0 : 1
                         enabled: (backsidelink.commentpage)? 0 : 1
 
-                        height: parent.height - linkbackbutton.height
+                        height: parent.height
                         width: parent.width
                         anchors.top: parent.top
 
@@ -882,18 +915,6 @@ MainView {
 
                             url: backsidelink.urlviewing
                             smooth: true
-                        }
-                    }
-                    Button {
-                        id: linkbackbutton
-                        text: "Go back"
-                        height: units.gu(4)
-                        width: parent.width
-                        anchors.bottom: parent.bottom
-                        onClicked: {
-                            flipablelink.flip()
-                            tools.active = true
-                            webview.url = "about:blank"
                         }
                     }
                 }
@@ -1131,7 +1152,7 @@ MainView {
                         property string urlviewing: ""
 
                         Rectangle {
-                            height: parent.height // - backbutton.height
+                            height: parent.height
                             width: parent.width
                             anchors.bottom: parent.bottom
                             color: parent.color
@@ -1264,9 +1285,13 @@ MainView {
                                         var split = text.toLowerCase().split("/")
                                         var i = 0
                                         for (; split.length; i++) {
-                                            if ( split[i] !== "" && split[i] !== "r") break
+                                            if ( split[i] !== "" && split[i] !== null && split[i] !== "r") break
                                         }
-                                        return split[i]
+                                        if (split[i] !== null && split.length > i && split[i].length > 0) {
+                                            return split[i]
+                                        } else {
+                                            return ""
+                                        }
                                     }
 
                                     ListItem.Empty {
@@ -1278,7 +1303,17 @@ MainView {
                                             width: parent.width
                                             height: units.gu(8)
                                             text: Storage.getSetting("sub1")
-                                            onTextChanged: Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
+                                            onTextChanged: {
+                                                Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
+                                                if (subredditColumn.stripSlashes(text) !== "") {
+                                                    subredditpage.tools.children[0].visible = true
+                                                    subredditpage.tools.children[0].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                                    subredditpage.tools.children[0].text = subredditColumn.stripSlashes(text)
+                                                } else {
+                                                    subredditpage.tools.children[0].visible = false
+                                                    subredditpage.tools.children[0].text = ""
+                                                }
+                                            }
                                             enabled: true
                                             font.pixelSize: parent.height / 2
                                         }
@@ -1293,7 +1328,17 @@ MainView {
                                             width: parent.width
                                             height: units.gu(8)
                                             text: Storage.getSetting("sub2")
-                                            onTextChanged: Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
+                                            onTextChanged: {
+                                                Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
+                                                if (subredditColumn.stripSlashes(text) !== "") {
+                                                    subredditpage.tools.children[1].visible = true
+                                                    subredditpage.tools.children[1].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                                    subredditpage.tools.children[1].text = subredditColumn.stripSlashes(text)
+                                                } else {
+                                                    subredditpage.tools.children[1].visible = false
+                                                    subredditpage.tools.children[1].text = ""
+                                                }
+                                            }
                                             enabled: true
                                             font.pixelSize: parent.height / 2
                                         }
@@ -1308,33 +1353,19 @@ MainView {
                                             width: parent.width
                                             height: units.gu(8)
                                             text:  Storage.getSetting("sub3")
-                                            onTextChanged: Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
+                                            onTextChanged: {
+                                                Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
+                                                if (subredditColumn.stripSlashes(text) !== "") {
+                                                    subredditpage.tools.children[2].visible = true
+                                                    subredditpage.tools.children[2].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                                    subredditpage.tools.children[2].text = subredditColumn.stripSlashes(text)
+                                                } else {
+                                                    subredditpage.tools.children[2].visible = false
+                                                    subredditpage.tools.children[2].text = ""
+                                                }
+                                            }
                                             enabled: true
                                             font.pixelSize: parent.height / 2
-                                        }
-                                    }
-
-                                    ListItem.Empty {
-                                        width: parent.width
-                                        height: units.gu(8)
-
-                                        Text {
-                                            width: parent.width
-                                            id: subsmessage
-                                            anchors.bottom: parent.bottom
-                                            anchors.centerIn: parent
-
-                                            //width: parent.width
-                                            height: units.gu(8)
-                                            color: (Storage.getSetting("nightmode") === "true") ? "#FFFFFF" : "#000000"
-
-                                            text: "Note: app will need to be restarted for changes to show up on the toolbar."
-                                            wrapMode: Text.WordWrap
-
-                                            enabled: true
-                                            opacity: .6
-
-                                            font.pixelSize: 14
                                         }
                                     }
                                 }
