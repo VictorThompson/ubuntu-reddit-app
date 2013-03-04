@@ -684,7 +684,7 @@ MainView {
                                                     enabled: itemflipable.flipped
                                                     onClicked: {
                                                         flipablelink.flip()
-                                                        commentrectangle.loadPage(model.data.permalink)
+                                                        commentrectangle.loadPage(model.data.permalink, model.data.title)
                                                         backsidelink.commentpage = true
                                                     }
                                                 }
@@ -729,17 +729,6 @@ MainView {
                     color: Js.getBackgroundColor()
                     enabled: flipablelink.flipped
 
-                    Button {
-                        id: linkbackbutton
-                        text: "Go back"
-                        height: units.gu(4)
-                        width: parent.width
-                        onClicked: {
-                            flipablelink.flip()
-                            webview.url = "about:blank"
-                        }
-                    }
-
                     Rectangle {
                         id: commentrectangle
                         opacity: (backsidelink.commentpage)? 1 : 0
@@ -754,10 +743,11 @@ MainView {
 
                         property string permalink: ""
 
-                        function loadPage (n_permalink) {
+                        function loadPage (n_permalink, title) {
                             permalink = n_permalink;
                             commentslistmodel.source = "http://www.reddit.com" + permalink + ".json"
                             pagestack.clear()
+                            rootpage.title = title
                             pagestack.push(rootpage)
                             popstackbutton.visible = false
                         }
@@ -775,21 +765,37 @@ MainView {
                             // try to merge these next 2
                             Page {
                                 id: rootpage
-                                title: ""
 
                                 ListView {
                                     anchors.fill: parent
                                     model: commentslistmodel.model
 
                                     delegate: ListItem.Standard {
-                                        text: model.data.body
+                                        width: parent.width
+                                        Text {
+                                            anchors.top: parent.top
+                                            anchors.topMargin: 10
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 10
+                                            id: commenttext
+                                            width: parent.width - 50
+                                            text: model.data.body
+                                            wrapMode: Text.WordWrap
+                                            color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                            opacity: .6
+                                        }
 
                                         progression: (model.data.replies === "") ? false : true
+                                        highlightWhenPressed: false
+
                                         onClicked: {
                                             if (model.data.replies !== "") {
                                                 pagestack.push(newpage, {commentsModel: model.data.replies.data.children})
                                                 popstackbutton.visible = true
                                             }
+                                        }
+                                        Component.onCompleted: {
+                                            height = commenttext.paintedHeight + 20
                                         }
                                     }
                                 }
@@ -800,7 +806,7 @@ MainView {
 
                                 Page {
                                     id: page
-                                    title: ""
+                                    title: rootpage.title
 
                                     property variant commentsModel: []
 
@@ -809,13 +815,29 @@ MainView {
                                         model: commentsModel
 
                                         delegate: ListItem.Standard {
-                                            text: modelData.data.body
+                                            Text {
+                                                anchors.top: parent.top
+                                                anchors.topMargin: 10
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 10
+                                                id: commentreplytext
+                                                width: parent.width - 40
+                                                text: modelData.data.body
+                                                wrapMode: Text.WordWrap
+                                                color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                                opacity: .6
+                                            }
 
                                             progression: (modelData.data.replies === "") ? false : true
+                                            highlightWhenPressed: false
+
                                             onClicked: {
                                                 if (modelData.data.replies !== "") {
                                                     pagestack.push(newpage, {commentsModel: modelData.data.replies.data.children})
                                                 }
+                                            }
+                                            Component.onCompleted: {
+                                                height = commentreplytext.paintedHeight + 20
                                             }
                                         }
                                     }
@@ -828,7 +850,7 @@ MainView {
                             height: units.gu(4)
                             visible: false
                             width: parent.width
-                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
                             onClicked: {
                                 pagestack.pop()
                                 if (pagestack.depth === 1) {
@@ -853,6 +875,16 @@ MainView {
 
                             url: backsidelink.urlviewing
                             smooth: true
+                        }
+                    }
+                    Button {
+                        id: linkbackbutton
+                        text: "Go back"
+                        height: units.gu(4)
+                        width: parent.width
+                        onClicked: {
+                            flipablelink.flip()
+                            webview.url = "about:blank"
                         }
                     }
                 }
