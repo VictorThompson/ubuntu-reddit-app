@@ -303,8 +303,12 @@ MainView {
                         iconSource: Qt.resolvedUrl("reddit.png")
 
                         onTriggered: {
-                            subreddittab.url = "/"
-                            reloadTabs()
+                            if (flipablelink.flipped) {
+                                console.log("upvote")
+                            } else {
+                                subreddittab.url = "/"
+                                reloadTabs()
+                            }
                         }
                     }
 
@@ -316,7 +320,11 @@ MainView {
                         iconSource: Qt.resolvedUrl("settings.png")
 
                         onTriggered: {
-                            tabs.selectedTabIndex++
+                            if (flipablelink.flipped) {
+                                console.log("downvote")
+                            } else {
+                                tabs.selectedTabIndex++
+                            }
                         }
                     }
 
@@ -327,11 +335,13 @@ MainView {
                         iconSource: Qt.resolvedUrl("avatar.png")
 
                         onTriggered: {
-                            if (flipablelink.flipped) {
+                            if (flipablelink.flipped && backsidelink.commentpage === true) {
                                 pagestack.pop()
                                 if (pagestack.depth === 1) {
                                     enabled = false
                                 }
+                            } else if (flipablelink.flipped) {
+                                console.log("comments")
                             } else {
                                 login()
                             }
@@ -349,7 +359,13 @@ MainView {
                             if (tools.children[2].text !== "") tools.children[2].visible = true
                             tools.children[3].visible = true
                             tools.children[4].visible = true
+                            tools.children[4].enabled = true
+                            tools.children[4].text = "home"
+                            tools.children[4].iconSource = Qt.resolvedUrl("reddit.png")
                             tools.children[5].visible = true
+                            tools.children[5].enabled = true
+                            tools.children[5].text = "settings"
+                            tools.children[5].iconSource = Qt.resolvedUrl("settings.png")
                             tools.children[6].visible = true
                             tools.children[6].enabled = true
                             tools.children[6].text = "login"
@@ -504,9 +520,12 @@ MainView {
                                             tools.children[1].visible = false
                                             tools.children[2].visible = false
                                             tools.children[3].visible = false
-                                            tools.children[4].visible = false
-                                            tools.children[5].visible = false
-                                            tools.children[6].visible = false
+                                            tools.children[4].text = "upvote"
+                                            tools.children[4].iconSource = Qt.resolvedUrl("upvoteEmpty.png")
+                                            tools.children[5].text = "downvote"
+                                            tools.children[5].iconSource = Qt.resolvedUrl("downvoteEmpty.png")
+                                            tools.children[6].text = "comments"
+                                            tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
                                             tools.back.visible = true
                                             frontsideitem.color = Js.getDimmedBackgroundColor()
                                             seenit.opacity = 1
