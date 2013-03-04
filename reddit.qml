@@ -15,8 +15,8 @@ import "javascript.js" as Js
 MainView {
     // objectName for functional testing purposes (autopilot-qt5)
     objectName: "reddit"
-    width: units.gu(50)
-    height: units.gu(75)
+    width: units.gu(45)
+    height: units.gu(80)
 
     Tabs {
         id: tabs
@@ -123,7 +123,8 @@ MainView {
                                 width: parent.width
                                 height: units.gu(8)
 
-                                text: "could not login check\nsettings"
+                                text: "could not login, check settings"
+                                wrapMode: Text.Wrap
                                 opacity: .6
 
                                 enabled: parent.visible
@@ -1333,6 +1334,7 @@ MainView {
                                     height: units.gu(8)
 
                                     Text {
+                                        width: parent.width
                                         id: subsmessage
                                         anchors.bottom: parent.bottom
                                         anchors.centerIn: parent
@@ -1341,7 +1343,8 @@ MainView {
                                         height: units.gu(8)
                                         color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
 
-                                        text: "Note: app will need to be restarted\nfor changes to show up on the toolbar."
+                                        text: "Note: app will need to be restarted for changes to show up on the toolbar."
+                                        wrapMode: Text.WordWrap
 
                                         enabled: true
                                         opacity: .6
