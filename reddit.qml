@@ -746,7 +746,7 @@ MainView {
 
                         height: parent.height - linkbackbutton.height
                         width: parent.width
-                        anchors.top: linkbackbutton.bottom
+                        anchors.top: parent.top
 
                         property string permalink: ""
 
@@ -874,7 +874,7 @@ MainView {
 
                         height: parent.height - linkbackbutton.height
                         width: parent.width
-                        anchors.top: linkbackbutton.bottom
+                        anchors.top: parent.top
 
                         WebView {
                             id: webview
@@ -889,6 +889,7 @@ MainView {
                         text: "Go back"
                         height: units.gu(4)
                         width: parent.width
+                        anchors.bottom: parent.bottom
                         onClicked: {
                             flipablelink.flip()
                             tools.active = true
