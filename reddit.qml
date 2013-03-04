@@ -746,9 +746,9 @@ MainView {
                                                         tools.children[4].visible = false
                                                         tools.children[5].visible = false
                                                         tools.children[6].visible = true
-                                                        tools.children[6].text = "parent"
+                                                        tools.children[6].text = "previous"
                                                         tools.children[6].enabled = false
-                                                        tools.children[6].iconSource = Qt.resolvedUrl("reddit.png")
+                                                        tools.children[6].iconSource = Qt.resolvedUrl("previous.png")
                                                         tools.back.visible = true
                                                     }
                                                 }
