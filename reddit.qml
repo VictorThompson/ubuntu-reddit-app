@@ -462,6 +462,7 @@ MainView {
                                         } else {
                                             flipablelink.flipped = true
                                             backsidelink.commentpage = false
+                                            tools.active = false
                                             webview.url = model.data.url
                                         }
                                     }
