@@ -167,6 +167,7 @@ MainView {
                                 height: units.gu(4)
 
                                 anchors.top: subreddittextfield.bottom
+                                anchors.topMargin: 10
                                 enabled: parent.visible
                                 text: "which subreddit?"
                                 opacity: .6
@@ -357,7 +358,7 @@ MainView {
                         }
                     }
 
-                    lock: true
+                    lock: (Storage.getSetting("autohidetoolbar") !== "true")
                 }
 
                 Column {
@@ -472,6 +473,15 @@ MainView {
                                     font.pixelSize: 22
                                 }
                                 Text {
+                                    id: seenit
+                                    anchors.bottom: parent.bottom
+                                    anchors.right: parent.right
+                                    opacity: 0
+                                    color: "green"
+                                    text: "✓"
+                                    font.pixelSize: 30
+                                }
+                                Text {
                                     id: nsfwtext
                                     anchors.centerIn: parent
                                     opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
@@ -487,9 +497,9 @@ MainView {
                                         if (model.data.is_self) {
                                             false
                                         } else {
+                                            webview.url = model.data.url
                                             flipablelink.flipped = true
                                             backsidelink.commentpage = false
-                                            //tools.active = false
                                             tools.children[0].visible = false
                                             tools.children[1].visible = false
                                             tools.children[2].visible = false
@@ -498,7 +508,8 @@ MainView {
                                             tools.children[5].visible = false
                                             tools.children[6].visible = false
                                             tools.back.visible = true
-                                            webview.url = model.data.url
+                                            frontsideitem.color = Js.getDimmedBackgroundColor()
+                                            seenit.opacity = 1
                                         }
                                     }
                                     enabled: !flipablelink.flipped
@@ -522,6 +533,7 @@ MainView {
                                     property bool flipped: false
 
                                     front: Rectangle {
+                                        id: frontsideitem
                                         anchors.fill: parent
                                         color: Js.getBackgroundColor()
 
@@ -727,7 +739,6 @@ MainView {
                                                         flipablelink.flip()
                                                         commentrectangle.loadPage(model.data.permalink, model.data.title)
                                                         backsidelink.commentpage = true
-                                                        //tools.active = false
                                                         tools.children[0].visible = false
                                                         tools.children[1].visible = false
                                                         tools.children[2].visible = false
@@ -928,7 +939,6 @@ MainView {
             title: "Settings"
             page: Page {
                 id: settingspage
-                anchors.margins: units.gu(4)
                 Component.onCompleted: {
                     if (Storage.getSetting("initialized") !== "true") {
                         // initialize settings
@@ -1014,6 +1024,7 @@ MainView {
                                     Storage.setSetting("sub3", "ubuntuphone")
                                     Storage.setSetting("accountname", "")
                                     Storage.setSetting("password", "")
+                                    Storage.setSetting("autohidetoolbar", "false")
                                     reloadTabs()
                                 }
                                 numberfetchedposts.selectedIndex = parseInt(Storage.getSetting("numberfetchedposts"))
@@ -1027,6 +1038,7 @@ MainView {
                                 nightmode.loadValue()
                                 flippages.loadValue()
                                 autologin.loadValue()
+                                autohidetoolbar.loadValue()
                                 sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
                                 sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
                                 sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
@@ -1117,6 +1129,21 @@ MainView {
                                     name: "nightmode"
                                 }
                             }
+
+                            ListItem.Standard {
+                                text: "Autohide main toolbar"
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: autohidetoolbar
+                                    name: "autohidetoolbar"
+                                    onCheckedChanged: {
+                                        toolbar.lock = (!autohidetoolbar.checked)
+                                    }
+                                }
+                            }
+
                             ListItem.Standard {
                                 //width: parent.width
                                 height: units.gu(5)

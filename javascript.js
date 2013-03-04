@@ -5,6 +5,13 @@ function getBackgroundColor () {
         return "#eeeeee"
 }
 
+function getDimmedBackgroundColor () {
+    if (Storage.getSetting("nightmode") == "true")
+        return "#444444"
+    else
+        return "#dddddd"
+}
+
 function getFetchedArray () {
     return ["10", "15", "25", "50"]
 }
