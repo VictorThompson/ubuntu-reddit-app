@@ -518,10 +518,99 @@ MainView {
 
                     color: Js.getBackgroundColor()
 
+                    GridView {
+                        id: gridview
+                        anchors.fill: parent
+                        visible: (Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
+                        model: linkslistmodel.model
+                        cellWidth: units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
+                        cellHeight: units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
+                        delegate: ListItem.Standard {
+                            id: griditem
+                            height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
+                            width: parent.width
+                            UbuntuShape {
+                                id: thumbshapegrid
+                                height: parent.height
+                                width: (Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
+                                anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
+                                anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
+                                radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
+
+                                image: Image {
+                                    id: gridthumbimage
+                                    fillMode: Image.Stretch
+                                    function chooseThumb () {
+                                        if (model.data.is_self) {
+                                            return ""
+                                        } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "" || model.data.thumbnail == "default") {
+                                            return "link.png"
+                                        } else {
+                                            return model.data.thumbnail
+                                        }
+                                    }
+                                    source: chooseThumb()
+                                }
+                                Text {
+                                    id: gridalttext
+                                    anchors.centerIn: parent
+                                    opacity: (model.data.is_self) ? .4 : 0
+                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                    text: "Aa+"
+                                    font.pixelSize: 22
+                                }
+                                Text {
+                                    id: gridseenit
+                                    anchors.bottom: parent.bottom
+                                    anchors.right: parent.right
+                                    opacity: 0
+                                    color: "green"
+                                    text: "✓"
+                                    font.pixelSize: 30
+                                }
+                                Text {
+                                    id: gridnsfwtext
+                                    anchors.centerIn: parent
+                                    opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
+                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                    font.bold: true
+                                    text: "nsfw"
+                                    font.pixelSize: 18
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        webview.url = model.data.url
+                                        flipablelink.flipped = true
+                                        backsidelink.commentpage = false
+                                        backsidelink.permalink = model.data.permalink
+                                        backsidelink.title = model.data.title
+                                        backsidelink.likes = model.data.likes
+                                        backsidelink.thingname = model.data.name
+                                        tools.children[0].visible = false
+                                        tools.children[1].visible = false
+                                        tools.children[2].visible = false
+                                        tools.children[3].visible = false
+                                        tools.children[4].text = "upvote"
+                                        tools.children[4].iconSource = Qt.resolvedUrl((model.data.likes === true) ? "upvote.png" : "upvoteEmpty.png")
+                                        tools.children[5].text = "downvote"
+                                        tools.children[5].iconSource = Qt.resolvedUrl((model.data.likes === false) ?  "downvote.png" : "downvoteEmpty.png")
+                                        tools.children[6].text = "comments"
+                                        tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
+                                        tools.back.visible = true
+                                        gridseenit.opacity = 1
+                                    }
+                                    enabled: !flipablelink.flipped
+                                }
+                            }
+                        }
+                    }
+
                     ListView {
                         id: listview
                         anchors.fill: parent
-
+                        visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
                         model: linkslistmodel.model
 
                         delegate: ListItem.Standard {
@@ -616,6 +705,7 @@ MainView {
                                 id: itemrectangle
                                 height: parent.height
                                 width: parent.width - thumbshape.width
+                                visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
 
                                 anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.left
                                 anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.right : undefined
@@ -1143,6 +1233,7 @@ MainView {
                                     Storage.setSetting("enablethumbnails", "true")
                                     Storage.setSetting("thumbnailsonleftside", "true")
                                     Storage.setSetting("rounderthumbnails", "false")
+                                    Storage.setSetting("gridthumbnails", "false")
                                     Storage.setSetting("postheight", "0")
                                     Storage.setSetting("nightmode", "false")
                                     Storage.setSetting("flippages", "true")
@@ -1162,6 +1253,7 @@ MainView {
                                 enablethumbnails.loadValue()
                                 thumbnailsonleftside.loadValue()
                                 rounderthumbnails.loadValue()
+                                gridthumbnails.loadValue()
                                 postheight.selectedIndex = parseInt(Storage.getSetting("postheight"))
                                 nightmode.loadValue()
                                 flippages.loadValue()
@@ -1185,7 +1277,7 @@ MainView {
 
                             ListItem.ValueSelector {
                                 id: postheight
-                                text: "Font size of posts"
+                                text: "Relative size of posts"
 
                                 values: Js.getPostHeightArray()
 
@@ -1209,6 +1301,11 @@ MainView {
                                     anchors.centerIn: parent
                                     id: enablethumbnails
                                     name: "enablethumbnails"
+                                    onCheckedChanged: {
+                                        gridview.visible = gridthumbnails.checked && enablethumbnails.checked
+                                        listview.visible = !gridview.visible
+                                        reloadTabs()
+                                    }
                                 }
                             }
 
@@ -1221,6 +1318,9 @@ MainView {
                                     anchors.centerIn: parent
                                     id: thumbnailsonleftside
                                     name: "thumbnailsonleftside"
+                                    onCheckedChanged: {
+                                        reloadTabs()
+                                    }
                                 }
                             }
 
@@ -1233,6 +1333,26 @@ MainView {
                                     anchors.centerIn: parent
                                     id: rounderthumbnails
                                     name: "rounderthumbnails"
+                                    onCheckedChanged: {
+                                        reloadTabs()
+                                    }
+                                }
+                            }
+
+                            ListItem.Standard {
+                                text: "Gallery/grid view of thumbnails"
+                                enabled: enablethumbnails.checked
+                                height: units.gu(5)
+
+                                control: SettingSwitch {
+                                    anchors.centerIn: parent
+                                    id: gridthumbnails
+                                    name: "gridthumbnails"
+                                    onCheckedChanged: {
+                                        gridview.visible = gridthumbnails.checked && enablethumbnails.checked
+                                        listview.visible = !gridview.visible
+                                        reloadTabs()
+                                    }
                                 }
                             }
 
