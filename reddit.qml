@@ -1450,6 +1450,8 @@ MainView {
     function reloadTabs() {
         console.debug("in reddit.qml reloadTabs()")
         subreddittab.refreshTab()
+        if (listview.enabled) listview.positionViewAtBeginning()
+        if (gridview.enabled) gridview.positionViewAtBeginning()
     }
 
     function login() {
