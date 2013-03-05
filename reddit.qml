@@ -525,7 +525,7 @@ MainView {
                         model: linkslistmodel.model
                         cellWidth: units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
                         cellHeight: units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
-                        delegate: ListItem.Standard {
+                        delegate: Item {
                             id: griditem
                             height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
                             width: parent.width
