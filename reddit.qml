@@ -716,6 +716,8 @@ MainView {
                                 Flipable {
                                     id: itemflipable
                                     anchors.fill: parent
+                                    visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
+                                    enabled: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
 
                                     property bool flipped: false
 
@@ -723,6 +725,8 @@ MainView {
                                         id: frontsideitem
                                         anchors.fill: parent
                                         color: Js.getBackgroundColor()
+                                        visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
+                                        enabled: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
 
                                         Label {
                                             width: parent.width
@@ -1176,6 +1180,7 @@ MainView {
                                     id: autohidetoolbar
                                     name: "autohidetoolbar"
                                     onCheckedChanged: {
+                                        toolbar.active = (!autohidetoolbar.checked)
                                         toolbar.lock = (!autohidetoolbar.checked)
                                     }
                                 }
