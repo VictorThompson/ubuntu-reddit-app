@@ -17,6 +17,7 @@ MainView {
     objectName: "reddit"
     width: units.gu(45)
     height: units.gu(80)
+    id: mainView
 
     Tabs {
         id: tabs
@@ -25,9 +26,18 @@ MainView {
 
         // First tab begins here
         Tab {
+            autoHideTabBar: true
             id: subreddittab
-            anchors.fill: parent
+
+            //anchors.fill: parent
             property string url: "/"
+            //	what are the real icon names for these?
+            //	is it possible to see icon and title in the title bar?
+            //	iconSource: (url == "/") ? "image://gicon/go-home" :
+            //				(url == "/r/all") ? "image://gicon/help-about" : ""
+
+            title: (url == "/") ? "reddit.com" : url.substring(1)
+
             Component.onCompleted: {
                 if (Storage.getSetting("autologin") == "true") {
                     login()
@@ -227,7 +237,9 @@ MainView {
 
             page: Page {
                 id: subredditpage
-                anchors.margins: units.gu(4)
+                width: mainView.width
+                height: mainView.height
+
                 Component.onCompleted: {
                     if (Storage.getSetting("initialized") !== "true") {
                         // initialize settings
@@ -303,11 +315,11 @@ MainView {
                         iconSource: Qt.resolvedUrl("reddit.png")
 
                         onTriggered: {
-                            if (flipablelink.flipped) {
+                            if (linkrectangle.enabled) {
                                 var http = new XMLHttpRequest()
                                 var voteurl = "http://www.reddit.com/api/vote"
                                 var direction = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? "0" : "1"
-                                var params = "dir=" + direction + "&id=" + backsidelink.thingname + "&uh="+Storage.getSetting("userhash")+"&api_type=json";
+                                var params = "dir=" + direction + "&id=" + linkrectangle.thingname + "&uh="+Storage.getSetting("userhash")+"&api_type=json";
                                 http.open("POST", voteurl, true);
                                 console.debug(params)
 
@@ -326,7 +338,7 @@ MainView {
                                                 console.debug("error")
                                             } else {
                                                 console.debug("Upvoted!")
-                                                backsidelink.likes = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? null : true
+                                                linkrectangle.likes = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? null : true
                                                 tools.children[4].iconSource = (tools.children[4].iconSource.toString().match(".*upvote.png$")) ? "upvoteEmpty.png" : "upvote.png"
                                                 tools.children[5].iconSource = "downvoteEmpty.png"
 
@@ -352,11 +364,11 @@ MainView {
                         iconSource: Qt.resolvedUrl("settings.png")
 
                         onTriggered: {
-                            if (flipablelink.flipped) {
+                            if (linkrectangle.enabled) {
                                 var http = new XMLHttpRequest()
                                 var voteurl = "http://www.reddit.com/api/vote"
                                 var direction = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? "0" : "-1"
-                                var params = "dir=" + direction + "&id=" + backsidelink.thingname+"&uh=" + Storage.getSetting("userhash")+"&api_type=json";
+                                var params = "dir=" + direction + "&id=" + linkrectangle.thingname+"&uh=" + Storage.getSetting("userhash")+"&api_type=json";
                                 http.open("POST", voteurl, true);
                                 console.debug(params)
 
@@ -375,7 +387,7 @@ MainView {
                                                 console.debug("error")
                                             } else {
                                                 console.debug("Downvoted!")
-                                                backsidelink.likes = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? null : false
+                                                linkrectangle.likes = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? null : false
                                                 tools.children[4].iconSource = "upvoteEmpty.png"
                                                 tools.children[5].iconSource = (tools.children[5].iconSource.toString().match(".*downvote.png$")) ? "downvoteEmpty.png" : "downvote.png"
                                             }
@@ -398,15 +410,16 @@ MainView {
                         iconSource: Qt.resolvedUrl("avatar.png")
 
                         onTriggered: {
-                            if (flipablelink.flipped && backsidelink.commentpage === true) {
+                            if (commentrectangle.enabled) {
                                 pagestack.pop()
                                 if (pagestack.depth === 1) {
                                     enabled = false
                                 }
-                            } else if (flipablelink.flipped) {
+                            } else if (linkrectangle.enabled) {
                                 console.log("comments")
-                                commentrectangle.loadPage(backsidelink.permalink, backsidelink.title)
-                                backsidelink.commentpage = true
+                                commentrectangle.enable()
+                                linkrectangle.disable()
+                                commentrectangle.loadPage(linkrectangle.permalink, linkrectangle.title)
                                 tools.children[4].visible = false
                                 tools.children[5].visible = false
                                 tools.children[6].visible = true
@@ -424,8 +437,10 @@ MainView {
                         visible: false
                         text: "return"
                         onTriggered: {
-                            flipablelink.flip()
-                            webview.url = "about:blank"
+                            linkrectangle.disable()
+                            commentrectangle.disable()
+                            listview.visible = true
+                            if(subredditpage.tools.lock === false) subredditpage.tools.active = false
                             if (tools.children[0].text !== "") tools.children[0].visible = true
                             if (tools.children[1].text !== "") tools.children[1].visible = true
                             if (tools.children[2].text !== "") tools.children[2].visible = true
@@ -449,373 +464,344 @@ MainView {
                     lock: (Storage.getSetting("autohidetoolbar") !== "true")
                 }
 
-                Column {
-                    anchors.centerIn: parent
-                    Label {
-                        id: label
-                        objectName: "label"
-                    }
-                }
-            }
-
-
-            //	what are the real icon names for these?
-            //	is it possible to see icon and title in the title bar?
-            //	iconSource: (url == "/") ? "image://gicon/go-home" :
-            //				(url == "/r/all") ? "image://gicon/help-about" : ""
-
-            title: (url == "/") ? "reddit.com" : url.substring(1)
-
-            function refreshTab() {
-                linkslistmodel.source = "http://www.reddit.com" + subreddittab.url + ".json?uh="+Storage.getSetting("userhash")+"&api_type=json&limit=" + Js.getFetchedArray()[Storage.getSetting("numberfetchedposts")]
-            }
-
-            Flipable {
-                id: flipablelink
-                anchors.fill: parent
-                property bool flipped: false
-
-                //flipsvertically: false
-
-                onFlippedChanged: {
-                    if (!flipped) {
-                        pagestack.clear()
-                        webview.url = "about:blank"
-                    }
-                }
-                function flip () {
-                    flipablelink.flipped = !flipablelink.flipped
-                }
-
-                transform: Rotation {
-                    id: linkrotation
-                    origin.x: flipablelink.width / 2
-                    origin.y: flipablelink.height / 2
-                    axis.x: 0; axis.y: 1; axis.z: 0     // add option: which axis
-                    angle: 0    // the default angle
-                }
-
-                states: State {
-                    name: "back"
-                    PropertyChanges { target: linkrotation; angle: 180 }
-                    when: flipablelink.flipped
-                }
-
-                transitions: Transition {
-                    NumberAnimation { target: linkrotation; property: "angle"; duration: (Storage.getSetting("flippages") != "true")? 0 : 200 }
+                function refreshTab() {
+                    linkslistmodel.source = "http://www.reddit.com" + subreddittab.url + ".json?uh="+Storage.getSetting("userhash")+"&api_type=json&limit=100"
+                    timer.start()
                 }
 
                 JSONListModel {
                     id: linkslistmodel
-                    source: (Storage.getSetting("initialized") === "true") ? "http://www.reddit.com/.json?uh=" + Storage.getSetting("userhash")+"&api_type=json&limit=" + Js.getFetchedArray()[Storage.getSetting("numberfetchedposts")]
-                                                                           : "http://www.reddit.com/.json?api_type=json&limit=25"
+                    source: (Storage.getSetting("initialized") === "true") ? "http://www.reddit.com/.json?uh=" + Storage.getSetting("userhash")+"&api_type=json&limit=100"
+                                                                           : "http://www.reddit.com/.json?api_type=json&limit=100"
                     query: "$.data.children[*]"
                 }
 
-                front: Rectangle {
-                    anchors.fill: parent
-                    enabled: !flipablelink.flipped
+                JSONListModel {
+                    id: appendmodel
+                    source: (Storage.getSetting("initialized") === "true") ? "http://www.reddit.com/.json?uh=" + Storage.getSetting("userhash")+"&api_type=json&limit=100"
+                                                                           : "http://www.reddit.com/.json?api_type=json&limit=100"
+                    query: "$.data.children[*]"
+                }
 
-                    color: Js.getBackgroundColor()
+                GridView {
+                    id: listview
+                    width: mainView.width
+                    height: mainView.height
+                    model: linkslistmodel.model
+                    cellHeight: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
+                    cellWidth: (Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true") ? cellHeight : mainView.width
 
-                    GridView {
-                        id: gridview
-                        anchors.fill: parent
-                        visible: (Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-                        model: linkslistmodel.model
-                        cellWidth: units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
-                        cellHeight: units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")])
-                        delegate: Item {
-                            id: griditem
-                            height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
-                            width: parent.width
-                            UbuntuShape {
-                                id: thumbshapegrid
-                                height: parent.height
-                                width: (Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
-                                anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
-                                anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
-                                radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
+                    Timer {
+                        id: timer
+                        interval: 2000; repeat: false
+                        running: true
+                        triggeredOnStart: true
 
-                                image: Image {
-                                    id: gridthumbimage
-                                    fillMode: Image.Stretch
-                                    function chooseThumb () {
-                                        if (model.data.is_self) {
-                                            return ""
-                                        } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "" || model.data.thumbnail == "default") {
-                                            return "link.png"
-                                        } else {
-                                            return model.data.thumbnail
-                                        }
-                                    }
-                                    source: chooseThumb()
-                                }
-                                Text {
-                                    id: gridalttext
-                                    anchors.centerIn: parent
-                                    opacity: (model.data.is_self) ? .4 : 0
-                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
-                                    text: "Aa+"
-                                    font.pixelSize: 22
-                                }
-                                Text {
-                                    id: gridseenit
-                                    anchors.bottom: parent.bottom
-                                    anchors.right: parent.right
-                                    opacity: 0
-                                    color: "green"
-                                    text: "✓"
-                                    font.pixelSize: 30
-                                }
-                                Text {
-                                    id: gridnsfwtext
-                                    anchors.centerIn: parent
-                                    opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
-                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
-                                    font.bold: true
-                                    text: "nsfw"
-                                    font.pixelSize: 18
-                                }
+                        onTriggered: {
+                            var j = JSON.parse(linkslistmodel.json)
+                            console.log(" j.data.after " +  j.data.after)
+                            appendmodel.source = linkslistmodel.source + "&after=" + j.data.after
+                            console.log("appendmodel.source " + appendmodel.source)
+                        }
+                    }
 
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: {
-                                        webview.url = model.data.url
-                                        flipablelink.flipped = true
-                                        backsidelink.commentpage = false
-                                        backsidelink.permalink = model.data.permalink
-                                        backsidelink.title = model.data.title
-                                        backsidelink.likes = model.data.likes
-                                        backsidelink.thingname = model.data.name
-                                        tools.children[0].visible = false
-                                        tools.children[1].visible = false
-                                        tools.children[2].visible = false
-                                        tools.children[3].visible = false
-                                        tools.children[4].text = "upvote"
-                                        tools.children[4].iconSource = Qt.resolvedUrl((model.data.likes === true) ? "upvote.png" : "upvoteEmpty.png")
-                                        tools.children[5].text = "downvote"
-                                        tools.children[5].iconSource = Qt.resolvedUrl((model.data.likes === false) ?  "downvote.png" : "downvoteEmpty.png")
-                                        tools.children[6].text = "comments"
-                                        tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
-                                        tools.back.visible = true
-                                        gridseenit.opacity = 1
-                                    }
-                                    enabled: !flipablelink.flipped
+                    onMovementEnded: {
+                        if(atYEnd) {
+                            var j = JSON.parse(appendmodel.json)
+                            var k = JSON.parse(linkslistmodel.json)
+                            if(j.data.after !== k.data.after) {
+                                for (var i = 0; i < appendmodel.model.count; i++) {
+                                    linkslistmodel.model.append(appendmodel.model.get(i))
                                 }
+                                appendmodel.source = linkslistmodel.source + "&after=" + j.data.after
                             }
                         }
                     }
 
-                    ListView {
-                        id: listview
-                        anchors.fill: parent
-                        visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-                        model: linkslistmodel.model
+                    delegate: Item {
+                        id: delegates
+                        height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
+                        width: parent.width
 
-                        delegate: ListItem.Standard {
-                            id: listitem
-                            height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
-                            width: parent.width
-
-                            UbuntuShape {
-                                id: thumbshape
-                                height: parent.height
-                                width: (Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
-                                anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
-                                anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
-                                radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
-
-                                image: Image {
-                                    id: thumbimage
-                                    fillMode: Image.Stretch
-                                    opacity: (model.data.is_self) ? 0 : 1
-                                    function chooseThumb () {
-                                        if (model.data.is_self) {
-                                            return ""
-                                        } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "" || model.data.thumbnail == "default") {
-                                            return "link.png"
-                                        } else {
-                                            return model.data.thumbnail
-                                        }
-                                    }
-                                    source: chooseThumb()
-                                }
-                                Text {
-                                    id: alttext
-                                    anchors.centerIn: parent
-                                    opacity: (model.data.is_self) ? .4 : 0
-                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
-                                    text: "Aa+"
-                                    font.pixelSize: 22
-                                }
-                                Text {
-                                    id: seenit
-                                    anchors.bottom: parent.bottom
-                                    anchors.right: parent.right
-                                    opacity: 0
-                                    color: "green"
-                                    text: "✓"
-                                    font.pixelSize: 30
-                                }
-                                Text {
-                                    id: nsfwtext
-                                    anchors.centerIn: parent
-                                    opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
-                                    color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
-                                    font.bold: true
-                                    text: "nsfw"
-                                    font.pixelSize: 18
-                                }
-
-                                MouseArea {
+                        Component {
+                            id: listdel
+                            ListItem.Standard {
+                                id: listitem
+                                height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
+                                width: mainView.width
+                                Rectangle {
+                                    id: background
+                                    color: Js.getBackgroundColor()
                                     anchors.fill: parent
-                                    onClicked: {
-                                        if (model.data.is_self) {
-                                            // TODO: view just the selftext, not the actual url
-                                            webview.url = model.data.url
-                                        } else {
-                                            webview.url = model.data.url
+                                    UbuntuShape {
+                                        id: thumbshape
+                                        height: parent.height
+                                        width: (Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
+                                        anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
+                                        anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
+                                        radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
+
+                                        image: Image {
+                                            id: thumbimage
+                                            fillMode: Image.Stretch
+                                            opacity: (model.data.is_self) ? 0 : 1
+                                            function chooseThumb () {
+                                                if (model.data.is_self) {
+                                                    return ""
+                                                } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "" || model.data.thumbnail == "default") {
+                                                    return "link.png"
+                                                } else {
+                                                    return model.data.thumbnail
+                                                }
+                                            }
+                                            source: chooseThumb()
                                         }
-                                        flipablelink.flipped = true
-                                        backsidelink.commentpage = false
-                                        backsidelink.permalink = model.data.permalink
-                                        backsidelink.title = model.data.title
-                                        backsidelink.likes = model.data.likes
-                                        backsidelink.thingname = model.data.name
-                                        tools.children[0].visible = false
-                                        tools.children[1].visible = false
-                                        tools.children[2].visible = false
-                                        tools.children[3].visible = false
-                                        tools.children[4].text = "upvote"
-                                        tools.children[4].iconSource = Qt.resolvedUrl((model.data.likes === true) ? "upvote.png" : "upvoteEmpty.png")
-                                        tools.children[5].text = "downvote"
-                                        tools.children[5].iconSource = Qt.resolvedUrl((model.data.likes === false) ?  "downvote.png" : "downvoteEmpty.png")
-                                        tools.children[6].text = "comments"
-                                        tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
-                                        tools.back.visible = true
-                                        frontsideitem.color = Js.getDimmedBackgroundColor()
-                                        seenit.opacity = 1
-                                    }
-                                    enabled: !flipablelink.flipped
-                                }
-                            }
-
-                            Rectangle {
-                                id: itemrectangle
-                                height: parent.height
-                                width: parent.width - thumbshape.width
-                                visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-                                enabled: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-
-                                anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.left
-                                anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.right : undefined
-
-                                color: Js.getBackgroundColor()
-
-                                Flipable {
-                                    id: itemflipable
-                                    anchors.fill: parent
-                                    visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-                                    enabled: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-
-                                    property bool flipped: false
-
-                                    front: Rectangle {
-                                        id: frontsideitem
-                                        anchors.fill: parent
-                                        color: Js.getBackgroundColor()
-                                        visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-                                        enabled: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
-
-                                        Label {
-                                            width: parent.width
-                                            text: model.data.title
-                                            wrapMode: Text.Wrap
-                                            maximumLineCount: 2
-
-                                            font.pixelSize: parent.height / 4
+                                        Text {
+                                            id: alttext
+                                            anchors.centerIn: parent
+                                            opacity: (model.data.is_self) ? .4 : 0
+                                            color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                            text: "Aa+"
+                                            font.pixelSize: 22
                                         }
-
-                                        Label {
-                                            width: parent.width
-                                            wrapMode: Text.Wrap
-                                            maximumLineCount: 1
-                                            font.pixelSize: parent.height / 5
-
+                                        Text {
+                                            id: seenit
                                             anchors.bottom: parent.bottom
-                                            //							anchors.left: thumbshape.right
-
-                                            text: "Score: " + model.data.score +
-                                                  " in r/" + model.data.subreddit +
-                                                  " by " + model.data.author +
-                                                  " (" + model.data.domain + ")"
+                                            anchors.right: parent.right
+                                            opacity: 0
+                                            color: "green"
+                                            text: "✓"
+                                            font.pixelSize: 30
+                                        }
+                                        Text {
+                                            id: nsfwtext
+                                            anchors.centerIn: parent
+                                            opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
+                                            color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                            font.bold: true
+                                            text: "nsfw"
+                                            font.pixelSize: 18
                                         }
 
                                         MouseArea {
                                             anchors.fill: parent
-
-                                            enabled: !itemflipable.flipped
                                             onClicked: {
-                                                // Flip item?
-                                                // itemflipable.flip()
-
-                                                // Go straight to comments?
-                                                flipablelink.flip()
-                                                commentrectangle.loadPage(model.data.permalink, model.data.title)
-                                                backsidelink.commentpage = true
-                                                backsidelink.permalink = model.data.permalink
-                                                backsidelink.title = model.data.title
-                                                backsidelink.likes = model.data.likes
-                                                backsidelink.thingname = model.data.name
+                                                if (model.data.is_self) {
+                                                    // TODO: view just the selftext, not the actual url
+                                                    linkrectangle.urlviewing = model.data.url
+                                                } else {
+                                                    linkrectangle.urlviewing = model.data.url
+                                                }
+                                                console.log("image clicked")
+                                                linkrectangle.enable()
+                                                linkrectangle.permalink = model.data.permalink
+                                                linkrectangle.title = model.data.title
+                                                linkrectangle.likes = model.data.likes
+                                                linkrectangle.thingname = model.data.name
                                                 tools.children[0].visible = false
                                                 tools.children[1].visible = false
                                                 tools.children[2].visible = false
                                                 tools.children[3].visible = false
-                                                tools.children[4].visible = false
-                                                tools.children[5].visible = false
-                                                tools.children[6].visible = true
-                                                tools.children[6].text = "previous"
-                                                tools.children[6].enabled = false
-                                                tools.children[6].iconSource = Qt.resolvedUrl("previous.png")
+                                                tools.children[4].text = "upvote"
+                                                tools.children[4].iconSource = Qt.resolvedUrl((model.data.likes === true) ? "upvote.png" : "upvoteEmpty.png")
+                                                tools.children[5].text = "downvote"
+                                                tools.children[5].iconSource = Qt.resolvedUrl((model.data.likes === false) ?  "downvote.png" : "downvoteEmpty.png")
+                                                tools.children[6].text = "comments"
+                                                tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
                                                 tools.back.visible = true
+                                                itemrectangle.color = Js.getDimmedBackgroundColor()
+                                                seenit.opacity = 1
                                             }
+                                        }
+                                    }
+                                }
+                                Rectangle {
+                                    id: itemrectangle
+                                    height: parent.height
+                                    width: parent.width - thumbshape.width
+                                    visible: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
+                                    enabled: !(Storage.getSetting("enablethumbnails") === "true" && Storage.getSetting("gridthumbnails") === "true")
+
+                                    anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.left
+                                    anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.right : undefined
+
+                                    color: Js.getBackgroundColor()
+
+                                    Label {
+                                        width: parent.width
+                                        text: model.data.title
+                                        wrapMode: Text.Wrap
+                                        maximumLineCount: 2
+
+                                        font.pixelSize: parent.height / 4
+                                    }
+
+                                    Label {
+                                        width: parent.width
+                                        wrapMode: Text.Wrap
+                                        maximumLineCount: 1
+                                        font.pixelSize: parent.height / 5
+
+                                        anchors.bottom: parent.bottom
+
+                                        text: "Score: " + model.data.score +
+                                              " in r/" + model.data.subreddit +
+                                              " by " + model.data.author +
+                                              " (" + model.data.domain + ")"
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+
+                                        enabled: true
+                                        onClicked: {
+                                            commentrectangle.enable()
+                                            console.log("item clicked")
+                                            linkrectangle.disable()
+                                            commentrectangle.permalink = model.data.permalink
+                                            commentrectangle.title = model.data.title
+                                            commentrectangle.likes = model.data.likes
+                                            commentrectangle.thingname = model.data.name
+                                            commentrectangle.loadPage(model.data.permalink, model.data.title)
+                                            tools.children[0].visible = false
+                                            tools.children[1].visible = false
+                                            tools.children[2].visible = false
+                                            tools.children[3].visible = false
+                                            tools.children[4].visible = false
+                                            tools.children[5].visible = false
+                                            tools.children[6].visible = true
+                                            tools.children[6].text = "previous"
+                                            tools.children[6].enabled = false
+                                            tools.children[6].iconSource = Qt.resolvedUrl("previous.png")
+                                            tools.back.visible = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Component {
+                            id: griddel
+
+                            Item {
+                                id: griditem
+                                height: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
+                                width: (Storage.getSetting("initialized") === "true") ? units.gu(Js.getPostHeightArray()[Storage.getSetting("postheight")]) : units.gu(6)
+                                Rectangle {
+                                    id: background
+                                    color: Js.getBackgroundColor()
+                                    anchors.fill: parent
+                                    UbuntuShape {
+                                        id: thumbshapegrid
+                                        height: parent.height
+                                        width: (Storage.getSetting("enablethumbnails") != "true") ? 0 : parent.height
+                                        anchors.left: (Storage.getSetting("thumbnailsonleftside") == "true") ? parent.left : undefined
+                                        anchors.right: (Storage.getSetting("thumbnailsonleftside") == "true") ? undefined : parent.right
+                                        radius: (Storage.getSetting("rounderthumbnails") == "true") ? "medium" : "small"
+
+                                        image: Image {
+                                            id: gridthumbimage
+                                            fillMode: Image.Stretch
+                                            function chooseThumb () {
+                                                if (model.data.is_self) {
+                                                    return ""
+                                                } else if (model.data.thumbnail == "nsfw" || model.data.thumbnail == "" || model.data.thumbnail == "default") {
+                                                    return "link.png"
+                                                } else {
+                                                    return model.data.thumbnail
+                                                }
+                                            }
+                                            source: chooseThumb()
+
+                                        }
+                                    }
+
+                                    Text {
+                                        id: gridalttext
+                                        anchors.centerIn: parent
+                                        opacity: (model.data.is_self) ? .4 : 0
+                                        color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                        text: "Aa+"
+                                        font.pixelSize: 22
+                                    }
+                                    Text {
+                                        id: gridseenit
+                                        anchors.bottom: parent.bottom
+                                        anchors.right: parent.right
+                                        opacity: 0
+                                        color: "green"
+                                        text: "✓"
+                                        font.pixelSize: 30
+                                    }
+                                    Text {
+                                        id: gridnsfwtext
+                                        anchors.centerIn: parent
+                                        opacity: (model.data.thumbnail == "nsfw") ? .6 : 0
+                                        color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                                        font.bold: true
+                                        text: "nsfw"
+                                        font.pixelSize: 18
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            linkrectangle.urlviewing = model.data.url
+                                            linkrectangle.enable()
+                                            linkrectangle.permalink = model.data.permalink
+                                            linkrectangle.title = model.data.title
+                                            linkrectangle.likes = model.data.likes
+                                            linkrectangle.thingname = model.data.name
+                                            tools.children[0].visible = false
+                                            tools.children[1].visible = false
+                                            tools.children[2].visible = false
+                                            tools.children[3].visible = false
+                                            tools.children[4].text = "upvote"
+                                            tools.children[4].iconSource = Qt.resolvedUrl((model.data.likes === true) ? "upvote.png" : "upvoteEmpty.png")
+                                            tools.children[5].text = "downvote"
+                                            tools.children[5].iconSource = Qt.resolvedUrl((model.data.likes === false) ?  "downvote.png" : "downvoteEmpty.png")
+                                            tools.children[6].text = "comments"
+                                            tools.children[6].iconSource = Qt.resolvedUrl("comments.png")
+                                            tools.back.visible = true
+                                            gridseenit.opacity = 1
                                         }
                                     }
                                 }
 
                             }
                         }
+                        Loader {
+                            id: loaddelegate
+                            sourceComponent: (Storage.getSetting("gridthumbnails") === "true") && (Storage.getSetting("enablethumbnails") === "true")? griddel : listdel
+                        }
                     }
-                }
-
-                back: Rectangle {
-                    id: backsidelink
-
-                    property bool commentpage: false
-                    property bool likes: null
-                    property string permalink: ""
-                    property string title: ""
-                    property string thingname: ""
-                    property string urlviewing: ""
-
-                    anchors.fill: parent
-                    color: Js.getBackgroundColor()
-                    enabled: flipablelink.flipped
-
                     Rectangle {
                         id: commentrectangle
-                        opacity: (backsidelink.commentpage)? 1 : 0
+                        anchors.fill: parent
+                        opacity: 0
+                        enabled: false
+                        visible: false
                         color: Js.getBackgroundColor()
-
-                        // why isn't this enabled?
-                        // TODO: fix contents
+                        function disable () {
+                            enabled = false
+                            visible = false
+                            opacity = 0
+                        }
+                        function enable () {
+                            enabled = true
+                            visible = true
+                            opacity = 1
+                        }
 
                         height: parent.height
                         width: parent.width
-                        anchors.top: parent.top
+                        //anchors.top: parent.top
 
+                        property bool likes: null
                         property string permalink: ""
+                        property string title: ""
+                        property string thingname: ""
+                        property string urlviewing: ""
 
                         function loadPage (n_permalink, title) {
                             permalink = n_permalink;
@@ -834,15 +820,18 @@ MainView {
 
                         PageStack {
                             id: pagestack
-                            anchors.fill: parent
+                            width: mainView.width
+                            height: mainView.height
                             Component.onCompleted: push(rootpage, [])
 
                             // try to merge these next 2
                             Page {
                                 id: rootpage
-
+                                width: mainView.width
+                                height: mainView.height
                                 ListView {
-                                    anchors.fill: parent
+                                    width: mainView.width
+                                    height: mainView.height
                                     model: commentslistmodel.model
 
                                     delegate: ListItem.Standard {
@@ -886,7 +875,8 @@ MainView {
                                     property variant commentsModel: []
 
                                     ListView {
-                                        anchors.fill: parent
+                                        width: mainView.width
+                                        height: mainView.height
                                         model: commentsModel
 
                                         delegate: ListItem.Standard {
@@ -916,28 +906,44 @@ MainView {
                                             }
                                         }
                                     }
+
                                 }
                             }
                         }
                     }
-
                     Rectangle {
                         id: linkrectangle
-                        opacity: (backsidelink.commentpage)? 0 : 1
-                        enabled: (backsidelink.commentpage)? 0 : 1
-
-                        height: parent.height
-                        width: parent.width
-                        anchors.top: parent.top
-
+                        opacity: 0
+                        enabled: false
+                        visible: false
+                        anchors.fill: parent
+                        function disable () {
+                            enabled = false
+                            visible = false
+                            opacity = 0
+                            webview.url = "about:blank"
+                        }
+                        function enable () {
+                            enabled = true
+                            visible = true
+                            opacity = 1
+                            anchors.fill = parent
+                        }
+                        property bool likes: null
+                        property string permalink: ""
+                        property string title: ""
+                        property string thingname: ""
+                        property string urlviewing: "about:blank"
                         WebView {
                             id: webview
-                            anchors.fill: parent
-
-                            url: backsidelink.urlviewing
+                            width: mainView.width
+                            height: mainView.height
+                            url: linkrectangle.urlviewing
                             smooth: true
                         }
+                        onUrlviewingChanged: webview.url = urlviewing
                     }
+
                 }
             }
         }
@@ -1021,15 +1027,12 @@ MainView {
                                     // initialize settings
                                     console.debug("reset settings")
                                     Storage.setSetting("initialized", "true")
-                                    Storage.setSetting("numberfetchedposts", "2")
-                                    Storage.setSetting("numberfetchedcomments", "2")
                                     Storage.setSetting("enablethumbnails", "true")
                                     Storage.setSetting("thumbnailsonleftside", "true")
                                     Storage.setSetting("rounderthumbnails", "false")
                                     Storage.setSetting("gridthumbnails", "false")
                                     Storage.setSetting("postheight", "0")
                                     Storage.setSetting("nightmode", "false")
-                                    Storage.setSetting("flippages", "true")
                                     Storage.setSetting("autologin", "false")
                                     Storage.setSetting("sub1", "linux")
                                     Storage.setSetting("sub2", "pics")
@@ -1039,8 +1042,6 @@ MainView {
                                     Storage.setSetting("autohidetoolbar", "false")
                                     reloadTabs()
                                 }
-                                numberfetchedposts.selectedIndex = parseInt(Storage.getSetting("numberfetchedposts"))
-                                numberfetchedcomments.selectedIndex = parseInt(Storage.getSetting("numberfetchedcomments"))
                                 // account...
                                 // subreddits...
                                 enablethumbnails.loadValue()
@@ -1049,7 +1050,6 @@ MainView {
                                 gridthumbnails.loadValue()
                                 postheight.selectedIndex = parseInt(Storage.getSetting("postheight"))
                                 nightmode.loadValue()
-                                flippages.loadValue()
                                 autologin.loadValue()
                                 autohidetoolbar.loadValue()
                                 sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
@@ -1057,16 +1057,6 @@ MainView {
                                 sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
                             }
 
-                            ListItem.ValueSelector {
-                                id: numberfetchedposts
-                                text: "Number of fetched posts"
-
-                                property string value: values[selectedIndex]
-
-                                values: Js.getFetchedArray()
-
-                                onSelectedIndexChanged: Storage.setSetting("numberfetchedposts", selectedIndex)
-                            }
 
                             ListItem.ValueSelector {
                                 id: postheight
@@ -1075,15 +1065,6 @@ MainView {
                                 values: Js.getPostHeightArray()
 
                                 onSelectedIndexChanged: Storage.setSetting("postheight", selectedIndex)
-                            }
-
-                            ListItem.ValueSelector {
-                                id: numberfetchedcomments
-                                text: "Number of fetched comments"
-
-                                values: Js.getFetchedArray()
-
-                                onSelectedIndexChanged: Storage.setSetting("numberfetchedcomments", selectedIndex)
                             }
 
                             ListItem.Standard {
@@ -1095,8 +1076,6 @@ MainView {
                                     id: enablethumbnails
                                     name: "enablethumbnails"
                                     onCheckedChanged: {
-                                        gridview.visible = gridthumbnails.checked && enablethumbnails.checked
-                                        listview.visible = !gridview.visible
                                         reloadTabs()
                                     }
                                 }
@@ -1142,21 +1121,8 @@ MainView {
                                     id: gridthumbnails
                                     name: "gridthumbnails"
                                     onCheckedChanged: {
-                                        gridview.visible = gridthumbnails.checked && enablethumbnails.checked
-                                        listview.visible = !gridview.visible
                                         reloadTabs()
                                     }
-                                }
-                            }
-
-                            ListItem.Standard {
-                                text: "Flip pages"
-                                height: units.gu(5)
-
-                                control: SettingSwitch {
-                                    anchors.centerIn: parent
-                                    id: flippages
-                                    name: "flippages"
                                 }
                             }
 
@@ -1449,15 +1415,15 @@ MainView {
 
     function reloadTabs() {
         console.debug("in reddit.qml reloadTabs()")
-        subreddittab.refreshTab()
-        if (listview.enabled) listview.positionViewAtBeginning()
-        if (gridview.enabled) gridview.positionViewAtBeginning()
+        subredditpage.refreshTab()
+        listview.positionViewAtBeginning()
+        if(subredditpage.tools.lock === false) subredditpage.tools.active = false
     }
 
     function login() {
-        if (tools.children[6].text === "logout") {
+        if (subredditpage.tools.children[6].text === "logout") {
             Storage.setSetting("userhash", 1)
-            tools.children[6].text = "login"
+            subredditpage.tools.children[6].text = "login"
             reloadTabs()
         } else {
 
@@ -1487,12 +1453,12 @@ MainView {
                             // store this user mod hash to pass to later api methods that require you to be logged in
                             Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
                             console.debug("success")
-                            tools.children[6].text = "logout"
+                            subredditpage.tools.children[6].text = "logout"
                             reloadTabs()
                         }
                     } else {
                         console.debug("error: " + http.status)
-                        dialog.showLoginPrompt()
+                        subredditpage.dialog.showLoginPrompt()
                     }
                 }
             }
