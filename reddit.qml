@@ -56,23 +56,47 @@ MainView {
 
                 default property alias __children: dynamicColumn.children
 
-                function showSubredditPrompt () {
-                    userloggedin.visible = false
-                    gotosub.visible = true
+                function showAccountPrompt () {
+                    passwordPrompt.visible = false
+                    accountPrompt.visible = true
+                    loginFailed.visible = false
+                    gotoSub.visible = false
                     dialogWindow.visible = true
                     dimBackground.visible = true
                     mouseBlocker.visible = true
                 }
-                function showLoginPrompt () {
-                    userloggedin.visible = true
-                    gotosub.visible = false
+                function showPasswordPrompt () {
+                    passwordPrompt.visible = true
+                    accountPrompt.visible = false
+                    loginFailed.visible = false
+                    gotoSub.visible = false
+                    dialogWindow.visible = true
+                    dimBackground.visible = true
+                    mouseBlocker.visible = true
+                }
+                function showSubredditPrompt () {
+                    passwordPrompt.visible = false
+                    accountPrompt.visible = false
+                    loginFailed.visible = false
+                    gotoSub.visible = true
+                    dialogWindow.visible = true
+                    dimBackground.visible = true
+                    mouseBlocker.visible = true
+                }
+                function showLoginFailed () {
+                    passwordPrompt.visible = false
+                    accountPrompt.visible = false
+                    loginFailed.visible = true
+                    gotoSub.visible = false
                     dialogWindow.visible = true
                     dimBackground.visible = true
                     mouseBlocker.visible = true
                 }
                 function hidePrompt () {
-                    userloggedin.visible = false
-                    gotosub.visible = false
+                    passwordPrompt.visible = false
+                    accountPrompt.visible = false
+                    loginFailed.visible = false
+                    gotoSub.visible = false
                     dialogWindow.visible = false
                     dimBackground.visible = false
                     mouseBlocker.visible = false
@@ -123,12 +147,12 @@ MainView {
                         anchors.margins: 10
 
                         Rectangle {
-                            id: userloggedin
+                            id: loginFailed
                             anchors.centerIn: parent
                             anchors.fill: parent
 
                             Text {
-                                id: loggedin
+                                id: loginFailedText
 
                                 width: parent.width
                                 height: units.gu(8)
@@ -156,7 +180,7 @@ MainView {
                         }
 
                         Rectangle {
-                            id: gotosub
+                            id: gotoSub
                             anchors.centerIn: parent
                             anchors.fill: parent
 
@@ -213,6 +237,95 @@ MainView {
                                 id: promptcancelbutton
                                 text: "cancel"
                                 anchors.bottom: parent.bottom
+                                anchors.right: parent.right
+                                height: units.gu(4)
+                                width: parent.width / 2
+                                onClicked: {
+                                    dialog.hidePrompt()
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            id: passwordPrompt
+                            anchors.centerIn: parent
+                            anchors.fill: parent
+
+                            TextField {
+                                id: password
+                                width: parent.width
+                                height: units.gu(8)
+                                placeholderText: "password"
+                                enabled: parent.visible
+                                echoMode: TextInput.Password
+                                font.pixelSize: 20
+                            }
+                            Button {
+                                id: passwordpromptokbutton
+                                text: "ok"
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                height: units.gu(4)
+                                width: parent.width / 2
+                                onClicked: {
+                                    login(Storage.getSetting("accountname"), password.text)
+                                    dialog.hidePrompt()
+                                }
+                            }
+
+                            Button {
+                                id: passwordpromptcancelbutton
+                                text: "cancel"
+                                anchors.bottom: parent.bottom
+                                anchors.right: parent.right
+                                height: units.gu(4)
+                                width: parent.width / 2
+                                onClicked: {
+                                    dialog.hidePrompt()
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            id: accountPrompt
+                            anchors.centerIn: parent
+                            anchors.fill: parent
+
+                            TextField {
+                                id: accountText
+                                width: parent.width
+                                height: units.gu(6)
+                                placeholderText: "username"
+                                enabled: parent.visible
+                                font.pixelSize: 20
+                            }
+
+                            TextField {
+                                id: passwordText
+                                width: parent.width
+                                height: units.gu(6)
+                                anchors.top: accountText.bottom
+                                placeholderText: "password"
+                                enabled: parent.visible
+                                echoMode: TextInput.Password
+                                font.pixelSize: 20
+                            }
+                            Button {
+                                id: accountpromptokbutton
+                                text: "ok"
+                                anchors.top: passwordText.bottom
+                                anchors.left: parent.left
+                                height: units.gu(4)
+                                width: parent.width / 2
+                                onClicked: {
+                                    login(accountText.text, passwordText.text)
+                                    dialog.hidePrompt()
+                                }
+                            }
+                            Button {
+                                id: accountpromptcancelbutton
+                                text: "cancel"
+                                anchors.top: passwordText.bottom
                                 anchors.right: parent.right
                                 height: units.gu(4)
                                 width: parent.width / 2
@@ -404,7 +517,7 @@ MainView {
                     }
 
                     Action {
-                        objectName: "corneraction"
+                        objectName: "login"
 
                         text: "login"
                         iconSource: Qt.resolvedUrl("avatar.png")
@@ -428,7 +541,17 @@ MainView {
                                 tools.children[6].iconSource = Qt.resolvedUrl("previous.png")
                                 tools.back.visible = true
                             } else {
-                                login()
+                                if (subredditpage.tools.children[6].text === "logout") {
+                                    Storage.setSetting("userhash", 1)
+                                    subredditpage.tools.children[6].text = "login"
+                                    reloadTabs()
+                                } else if (Storage.getSetting("accountname") === "") {
+                                    dialog.showAccountPrompt()
+                                } else if (Storage.getSetting("password") === "") {
+                                    dialog.showPasswordPrompt()
+                                } else {
+                                   login()
+                                }
                             }
                         }
                     }
@@ -1201,11 +1324,14 @@ MainView {
 
                                 Column {
                                     anchors.fill:parent
-
+                                    ListItem.Standard {
+                                        width: parent.width
+                                        text: "If you enter a password it will be stored in clear text.\nIf you do not, you will be prompted for the password\nwhen you click 'login'"
+                                        enabled: true
+                                    }
                                     ListItem.Empty {
                                         width: parent.width
                                         height: accounttextfield.height
-
                                         TextField {
                                             id: accounttextfield
 
@@ -1420,49 +1546,53 @@ MainView {
         if(subredditpage.tools.lock === false) subredditpage.tools.active = false
     }
 
-    function login() {
-        if (subredditpage.tools.children[6].text === "logout") {
-            Storage.setSetting("userhash", 1)
-            subredditpage.tools.children[6].text = "login"
-            reloadTabs()
-        } else {
+    function login(username, password) {
 
-            var http = new XMLHttpRequest()
-            var loginurl = "https://ssl.reddit.com/api/login";
-            var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
-            http.open("POST", loginurl, true);
+        var user = Storage.getSetting("accountname")
+        var pass = Storage.getSetting("password")
+        if (arguments.length == 2) {
+            user = username
+            pass = password
+            console.log(user)
+            console.log(pass)
+        }
 
-            // Only display params, with password, if needed.
-            // console.debug(params)
+        var http = new XMLHttpRequest()
+        var loginurl = "https://ssl.reddit.com/api/login";
+        var params = "user=" + user + "&passwd=" + pass + "&api_type=json";
+        http.open("POST", loginurl, true);
 
-            // Send the proper header information along with the request
-            http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            http.setRequestHeader("Content-length", params.length);
-            http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
-            http.setRequestHeader("Connection", "close");
+        // Only display params, with password, if needed.
+        // console.debug(params)
 
-            http.onreadystatechange = function() {
-                if (http.readyState == 4) {
-                    if (http.status == 200) {
-                        console.debug(http.responseText)
-                        var jsonresponse = JSON.parse(http.responseText)
-                        if (jsonresponse.json.data === undefined) {
-                            console.debug("error")
-                            dialog.showLoginPrompt()
-                        } else {
-                            // store this user mod hash to pass to later api methods that require you to be logged in
-                            Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
-                            console.debug("success")
-                            subredditpage.tools.children[6].text = "logout"
-                            reloadTabs()
-                        }
+        // Send the proper header information along with the request
+        http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        http.setRequestHeader("Content-length", params.length);
+        http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
+        http.setRequestHeader("Connection", "close");
+
+        http.onreadystatechange = function() {
+            if (http.readyState == 4) {
+                if (http.status == 200) {
+                    console.debug(http.responseText)
+                    var jsonresponse = JSON.parse(http.responseText)
+                    if (jsonresponse.json.data === undefined) {
+                        console.debug("error")
+                        dialog.showLoginFailed()
                     } else {
-                        console.debug("error: " + http.status)
-                        subredditpage.dialog.showLoginPrompt()
+                        // store this user mod hash to pass to later api methods that require you to be logged in
+                        Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
+                        console.debug("success")
+                        subredditpage.tools.children[6].text = "logout"
+                        reloadTabs()
                     }
+                } else {
+                    console.debug("error: " + http.status)
+                    subredditpage.dialog.showLoginFailed()
                 }
             }
-            http.send(params);
         }
+        http.send(params);
     }
+
 }
