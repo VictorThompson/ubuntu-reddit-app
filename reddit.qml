@@ -564,6 +564,11 @@ MainView {
                             commentrectangle.disable()
                             listview.visible = true
                             if(subredditpage.tools.lock === false) subredditpage.tools.active = false
+                            if (Storage.getSetting("autohidetoolbar") == "true") {
+                                subredditpage.tools.active = false
+                                subredditpage.tools.lock = false
+                            }
+
                             if (tools.children[0].text !== "") tools.children[0].visible = true
                             if (tools.children[1].text !== "") tools.children[1].visible = true
                             if (tools.children[2].text !== "") tools.children[2].visible = true
@@ -934,6 +939,8 @@ MainView {
                             pagestack.push(rootpage)
                             tools.children[6].enabled = false
                             tools.children[6].visible = true
+                            tools.active = true
+                            tools.lock = true
                         }
 
                         JSONListModel {
