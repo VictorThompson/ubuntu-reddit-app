@@ -26,7 +26,6 @@ MainView {
 
         // First tab begins here
         Tab {
-            autoHideTabBar: true
             id: subreddittab
 
             //anchors.fill: parent
