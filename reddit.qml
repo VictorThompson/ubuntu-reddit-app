@@ -742,8 +742,6 @@ MainView {
         }
         Page {
             id: commentpage
-            width: mainView.width
-            height: mainView.height
 
             property bool likes: null
             property string permalink: ""
@@ -763,8 +761,7 @@ MainView {
             Rectangle {
                 id: commentbackground
                 color: Js.getBackgroundColor()
-                width: mainView.width
-                height: mainView.height
+                anchors.fill: parent
 
                 ListView {
                     model: commentslistmodel.model
@@ -1021,7 +1018,6 @@ MainView {
 
         Page {
             id: settingspage
-            visible: false
             title: "Settings"
 
             tools: ToolbarActions {
