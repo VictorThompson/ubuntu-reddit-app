@@ -351,27 +351,28 @@ MainView {
                 }
             }
 
-            tools: ToolbarActions {
-                id: toolbar
-                active: true
-                lock: true
-                function chooseIcon (text) {
-                    var test = (text === undefined) ? "" : text.toLowerCase().toString()
-                    if (test.match(".*ubuntu.*")) {
-                        return "ubuntu.png"
-                    } else if (test.match(".*linux.*")) {
-                        return "linux.png"
-                    } else {
-                        return "reddit.png"
-                    }
+            function chooseIcon (text) {
+                var test = (text === undefined) ? "" : text.toLowerCase().toString()
+                if (test.match(".*ubuntu.*")) {
+                    return "ubuntu.png"
+                } else if (test.match(".*linux.*")) {
+                    return "linux.png"
+                } else {
+                    return "reddit.png"
                 }
+            }
+
+            tools: ToolbarActions {
+                id: subredditpagetoolbar
+                active: true
+                lock: Storage.getSetting("autohidetoolbar") === "false"
 
                 Action {
                     objectName: "sub1action"
 
                     visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub1") !== ""
                     text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub1").toString() : "linux"
-                    iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
+                    iconSource: Qt.resolvedUrl(subredditpage.chooseIcon(text))
                     onTriggered: {
                         mainView.url = "/r/" + text
                         reloadTabs()
@@ -382,7 +383,7 @@ MainView {
 
                     visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub2") !== null
                     text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub2").toString() : "pics"
-                    iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
+                    iconSource: Qt.resolvedUrl(subredditpage.chooseIcon(text))
 
                     onTriggered: {
                         mainView.url = "/r/" + text
@@ -394,7 +395,7 @@ MainView {
 
                     visible: Storage.getSetting("initialized") !== "true" || Storage.getSetting("sub3") !== null
                     text: Storage.getSetting("initialized") === "true" ? Storage.getSetting("sub3").toString() : "ubuntuphone"
-                    iconSource: Qt.resolvedUrl(toolbar.chooseIcon(text))
+                    iconSource: Qt.resolvedUrl(subredditpage.chooseIcon(text))
 
                     onTriggered: {
                         mainView.url = "/r/" + text
@@ -583,17 +584,17 @@ MainView {
                                         onClicked: {
                                             if (model.data.is_self) {
                                                 // TODO: view just the selftext, not the actual url
-                                                linkrectangle.urlviewing = model.data.url
+                                                linkpage.urlviewing = model.data.url
                                                 mainPageStack.push(linkpage)
                                             } else {
-                                                linkrectangle.urlviewing = model.data.url
+                                                linkpage.urlviewing = model.data.url
                                                 mainPageStack.push(linkpage)
                                             }
                                             console.log("image clicked")
-                                            linkrectangle.permalink = model.data.permalink
-                                            linkrectangle.title = model.data.title
-                                            linkrectangle.likes = model.data.likes
-                                            linkrectangle.thingname = model.data.name
+                                            linkpage.permalink = model.data.permalink
+                                            linkpage.title = model.data.title
+                                            linkpage.likes = model.data.likes
+                                            linkpage.thingname = model.data.name
                                             itemrectangle.color = Js.getDimmedBackgroundColor()
                                             seenit.opacity = 1
                                         }
@@ -642,11 +643,11 @@ MainView {
                                     onClicked: {
                                         mainPageStack.push(commentpage)
                                         console.log("item clicked")
-                                        commentrectangle.permalink = model.data.permalink
-                                        commentrectangle.title = model.data.title
-                                        commentrectangle.likes = model.data.likes
-                                        commentrectangle.thingname = model.data.name
-                                        commentrectangle.loadPage(model.data.permalink, model.data.title)
+                                        commentpage.permalink = model.data.permalink
+                                        commentpage.title = model.data.title
+                                        commentpage.likes = model.data.likes
+                                        commentpage.thingname = model.data.name
+                                        commentslistmodel.source = "http://www.reddit.com" + commentpage.permalink + ".json"
                                     }
                                 }
                             }
@@ -720,11 +721,11 @@ MainView {
                                     anchors.fill: parent
                                     onClicked: {
                                         mainPageStack.push(linkpage)
-                                        linkrectangle.urlviewing = model.data.url
-                                        linkrectangle.permalink = model.data.permalink
-                                        linkrectangle.title = model.data.title
-                                        linkrectangle.likes = model.data.likes
-                                        linkrectangle.thingname = model.data.name
+                                        linkpage.urlviewing = model.data.url
+                                        linkpage.permalink = model.data.permalink
+                                        linkpage.title = model.data.title
+                                        linkpage.likes = model.data.likes
+                                        linkpage.thingname = model.data.name
                                         gridseenit.opacity = 1
                                     }
                                 }
@@ -743,163 +744,133 @@ MainView {
             id: commentpage
             width: mainView.width
             height: mainView.height
+
+            property bool likes: null
+            property string permalink: ""
+            property string thingname: ""
+            property string urlviewing: ""
+
+            JSONListModel {
+                id: commentslistmodel
+                query: "$[1].data.children[*]"
+            }
+
             tools: ToolbarActions {
                 id: commenttoolbar
                 active: true
                 lock: true
+            }
+            Rectangle {
+                id: commentbackground
+                color: Js.getBackgroundColor()
+                width: mainView.width
+                height: mainView.height
 
-                Action {
-                    objectName: "previous"
-                    enabled: false
+                ListView {
+                    model: commentslistmodel.model
+                    width: mainView.width
+                    height: mainView.height
 
-                    text: "previous"
-                    iconSource: Qt.resolvedUrl("previous.png")
+                    delegate: ListItem.Standard {
+                        width: parent.width
 
-                    onTriggered: {
-                        pagestack.pop()
-                        if (pagestack.depth === 1) {
-                            enabled = false
+                        Text {
+                            anchors.top: parent.top
+                            anchors.topMargin: 10
+                            anchors.left: parent.left
+                            anchors.leftMargin: 10
+                            id: commenttext
+                            width: parent.width - 50
+                            text: model.data.body
+                            wrapMode: Text.WordWrap
+                            color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
+                            opacity: .6
+                        }
+
+                        progression: (model.data.replies === "") ? false : true
+                        highlightWhenPressed: false
+
+                        onClicked: {
+                            if (model.data.replies !== "") {
+                                mainPageStack.push(newpage, {commentsModel: model.data.replies.data.children})
+                            }
+                        }
+                        Component.onCompleted: {
+                            height = commenttext.paintedHeight + 20
                         }
                     }
                 }
-
-                back {
-                    visible: true
-                    text: "return"
-                    onTriggered: {
-                        mainPageStack.pop()
-                    }
-                }
             }
+            Component {
+                id: newpage
 
-            Rectangle {
-                id: commentrectangle
-                anchors.fill: parent
-                color: Js.getBackgroundColor()
-                function disable () {
-                    enabled = false
-                    visible = false
-                    opacity = 0
-                }
-                function enable () {
-                    enabled = true
-                    visible = true
-                    opacity = 1
-                }
+                Page {
+                    id: page
+                    title: commentpage.title
 
-                height: parent.height
-                width: parent.width
-                //anchors.top: parent.top
+                    property variant commentsModel: []
 
-                property bool likes: null
-                property string permalink: ""
-                property string title: ""
-                property string thingname: ""
-                property string urlviewing: ""
+                    tools: ToolbarActions {
+                        id: commenttoolbar
+                        active: true
+                        lock: true
 
-                function loadPage (n_permalink, title) {
-                    permalink = n_permalink;
-                    commentslistmodel.source = "http://www.reddit.com" + permalink + ".json"
-                    pagestack.clear()
-                    rootpage.title = title
-                    pagestack.push(rootpage)
-                    tools.children[1].enabled = false
-                }
+                        Action {
+                            objectName: "previous"
+                            enabled: true
 
-                JSONListModel {
-                    id: commentslistmodel
-                    query: "$[1].data.children[*]"
-                }
+                            text: "previous"
+                            iconSource: Qt.resolvedUrl("previous.png")
 
-                PageStack {
-                    id: pagestack
-                    width: mainView.width
-                    height: mainView.height
-                    Component.onCompleted: push(rootpage, [])
+                            onTriggered: {
+                                mainPageStack.pop()
+                            }
+                        }
 
-                    // try to merge these next 2
-                    Page {
-                        id: rootpage
-                        width: mainView.width
-                        height: mainView.height
+                        back {
+                            visible: true
+                            text: "Back"
+                            onTriggered: {
+                                mainPageStack.pop(subredditpage)
+                            }
+                        }
+                    }
+                    Rectangle {
+                        id: commentbackground
+                        color: Js.getBackgroundColor()
+                        anchors.fill: parent
+
                         ListView {
                             width: mainView.width
                             height: mainView.height
-                            model: commentslistmodel.model
+                            model: commentsModel
 
                             delegate: ListItem.Standard {
-                                width: parent.width
                                 Text {
                                     anchors.top: parent.top
                                     anchors.topMargin: 10
                                     anchors.left: parent.left
                                     anchors.leftMargin: 10
-                                    id: commenttext
-                                    width: parent.width - 50
-                                    text: model.data.body
+                                    id: commentreplytext
+                                    width: parent.width - 40
+                                    text: modelData.data.body
                                     wrapMode: Text.WordWrap
                                     color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
                                     opacity: .6
                                 }
 
-                                progression: (model.data.replies === "") ? false : true
+                                progression: (modelData.data.replies === "") ? false : true
                                 highlightWhenPressed: false
 
                                 onClicked: {
-                                    if (model.data.replies !== "") {
-                                        pagestack.push(newpage, {commentsModel: model.data.replies.data.children})
-                                        tools.children[1].enabled = true
+                                    if (modelData.data.replies !== "") {
+                                        mainPageStack.push(newpage, {commentsModel: modelData.data.replies.data.children})
                                     }
                                 }
                                 Component.onCompleted: {
-                                    height = commenttext.paintedHeight + 20
+                                    height = commentreplytext.paintedHeight + 20
                                 }
                             }
-                        }
-                    }
-
-                    Component {
-                        id: newpage
-
-                        Page {
-                            id: page
-                            title: rootpage.title
-
-                            property variant commentsModel: []
-
-                            ListView {
-                                width: mainView.width
-                                height: mainView.height
-                                model: commentsModel
-
-                                delegate: ListItem.Standard {
-                                    Text {
-                                        anchors.top: parent.top
-                                        anchors.topMargin: 10
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 10
-                                        id: commentreplytext
-                                        width: parent.width - 40
-                                        text: modelData.data.body
-                                        wrapMode: Text.WordWrap
-                                        color: (Storage.getSetting("nightmode") == "true") ? "#FFFFFF" : "#000000"
-                                        opacity: .6
-                                    }
-
-                                    progression: (modelData.data.replies === "") ? false : true
-                                    highlightWhenPressed: false
-
-                                    onClicked: {
-                                        if (modelData.data.replies !== "") {
-                                            pagestack.push(newpage, {commentsModel: modelData.data.replies.data.children})
-                                        }
-                                    }
-                                    Component.onCompleted: {
-                                        height = commentreplytext.paintedHeight + 20
-                                    }
-                                }
-                            }
-
                         }
                     }
                 }
@@ -911,8 +882,6 @@ MainView {
             height: mainView.height
             tools: ToolbarActions {
                 id: linktoolbar
-                active: true
-                lock: true
 
                 Action {
                     objectName: "upvote"
@@ -924,7 +893,7 @@ MainView {
                         var http = new XMLHttpRequest()
                         var voteurl = "http://www.reddit.com/api/vote"
                         var direction = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? "0" : "1"
-                        var params = "dir=" + direction + "&id=" + linkrectangle.thingname + "&uh="+Storage.getSetting("userhash")+"&api_type=json";
+                        var params = "dir=" + direction + "&id=" + linkpage.thingname + "&uh="+Storage.getSetting("userhash")+"&api_type=json";
                         http.open("POST", voteurl, true);
                         console.debug(params)
 
@@ -943,7 +912,7 @@ MainView {
                                         console.debug("error")
                                     } else {
                                         console.debug("Upvoted!")
-                                        linkrectangle.likes = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? null : true
+                                        linkpage.likes = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? null : true
                                         tools.children[1].iconSource = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? "upvoteEmpty.png" : "upvote.png"
                                         tools.children[2].iconSource = "downvoteEmpty.png"
 
@@ -969,7 +938,7 @@ MainView {
                         var http = new XMLHttpRequest()
                         var voteurl = "http://www.reddit.com/api/vote"
                         var direction = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? "0" : "-1"
-                        var params = "dir=" + direction + "&id=" + linkrectangle.thingname+"&uh=" + Storage.getSetting("userhash")+"&api_type=json";
+                        var params = "dir=" + direction + "&id=" + linkpage.thingname+"&uh=" + Storage.getSetting("userhash")+"&api_type=json";
                         http.open("POST", voteurl, true);
                         console.debug(params)
 
@@ -988,7 +957,7 @@ MainView {
                                         console.debug("error")
                                     } else {
                                         console.debug("Downvoted!")
-                                        linkrectangle.likes = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? null : false
+                                        linkpage.likes = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? null : false
                                         tools.children[1].iconSource = "upvoteEmpty.png"
                                         tools.children[2].iconSource = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? "downvoteEmpty.png" : "downvote.png"
                                     }
@@ -1008,501 +977,470 @@ MainView {
                     iconSource: Qt.resolvedUrl("comments.png")
 
                     onTriggered: {
-                        console.log("comments")
-                        commentrectangle.loadPage(linkrectangle.permalink, linkrectangle.title)
                         mainPageStack.push(commentpage)
-                    }
-                }
-
-                back {
-                    visible: true
-                    text: "return"
-                    onTriggered: {
-                        mainPageStack.pop()
+                        console.log("item clicked")
+                        commentpage.permalink = linkpage.permalink
+                        commentpage.title = linkpage.title
+                        commentpage.likes = linkpage.likes
+                        commentpage.thingname = linkpage.thingname
+                        commentslistmodel.source = "http://www.reddit.com" + commentpage.permalink + ".json"
                     }
                 }
             }
 
-            Rectangle {
-                id: linkrectangle
-                anchors.fill: parent
-                function disable () {
-                    enabled = false
-                    visible = false
-                    opacity = 0
-                    webview.url = "about:blank"
+            property bool likes: null
+            property string permalink: ""
+            property string thingname: ""
+            property string urlviewing: "about:blank"
+            WebView {
+                id: webview
+                width: mainView.width
+                height: mainView.height
+                url: linkpage.urlviewing
+                smooth: true
+
+                onLoadingChanged: {
+                    loadProgressBar.visible = loading
                 }
-                function enable () {
-                    enabled = true
-                    visible = true
-                    opacity = 1
-                    anchors.fill = parent
+
+                onLoadProgressChanged: {
+                    loadProgressBar.value = loadProgress
                 }
-                property bool likes: null
-                property string permalink: ""
-                property string title: ""
-                property string thingname: ""
-                property string urlviewing: "about:blank"
-                WebView {
-                    id: webview
-                    width: mainView.width
-                    height: mainView.height
-                    url: linkrectangle.urlviewing
-                    smooth: true
-                }
-                onUrlviewingChanged: webview.url = urlviewing
             }
+            ProgressBar {
+                id: loadProgressBar
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                minimumValue: 0
+                maximumValue: 100
+            }
+
+            onUrlviewingChanged: webview.url = urlviewing
         }
+
         Page {
             id: settingspage
             visible: false
-            width: mainView.width
-            height: mainView.height
+            title: "Settings"
 
             tools: ToolbarActions {
                 id: settingstoolbar
                 active: true
                 lock: true
+
+                Action {
+                    objectName: "main"
+
+                    text: "main"
+                    iconSource: Qt.resolvedUrl("settings.png")
+
+                    onTriggered: {
+                        settingspage.loadMain()
+                    }
+                }
+
                 Action {
                     objectName: "account"
 
-                    visible: true
                     text: "account"
                     iconSource: Qt.resolvedUrl("avatar.png")
 
                     onTriggered: {
-                        backside.loadLogin()
+                        settingspage.loadLogin()
                     }
                 }
 
                 Action {
                     objectName: "subreddits"
 
-                    visible: true
                     text: "subreddits"
                     iconSource: Qt.resolvedUrl("reddit.png")
 
                     onTriggered: {
-                        backside.loadSubreddits()
+                        settingspage.loadSubreddits()
                     }
                 }
+            }
+            function loadMain () {
+                mainsettings.visible = true
+                accountsettings.visible = false
+                subredditsettings.visible = false
+            }
+            function loadLogin () {
+                mainsettings.visible = false
+                accountsettings.visible = true
+                subredditsettings.visible = false
+            }
 
-                back {
-                    visible: true
-                    onTriggered: {
-                        if (flipable.flipped) {
-                            flipable.flip()
-                        } else {
-                            mainPageStack.pop()
+            function loadSubreddits () {
+                mainsettings.visible = false
+                accountsettings.visible = false
+                subredditsettings.visible = true
+            }
+            Rectangle {
+                id: mainsettings
+                anchors.fill: parent
+                color: Js.getBackgroundColor()
+                visible: true
+
+                Column {
+                    anchors.fill: parent
+
+                    Component.onCompleted: {
+                        Storage.initialize()
+                        console.debug("INITIALIZED")
+                        if (Storage.getSetting("initialized") !== "true") {
+                            // initialize settings
+                            console.debug("reset settings")
+                            Storage.setSetting("initialized", "true")
+                            Storage.setSetting("enablethumbnails", "true")
+                            Storage.setSetting("thumbnailsonleftside", "true")
+                            Storage.setSetting("rounderthumbnails", "false")
+                            Storage.setSetting("gridthumbnails", "false")
+                            Storage.setSetting("postheight", "0")
+                            Storage.setSetting("nightmode", "false")
+                            Storage.setSetting("autologin", "false")
+                            Storage.setSetting("sub1", "linux")
+                            Storage.setSetting("sub2", "pics")
+                            Storage.setSetting("sub3", "ubuntuphone")
+                            Storage.setSetting("accountname", "")
+                            Storage.setSetting("password", "")
+                            Storage.setSetting("autohidetoolbar", "false")
+                            reloadTabs()
                         }
+                        // account...
+                        // subreddits...
+                        enablethumbnails.loadValue()
+                        thumbnailsonleftside.loadValue()
+                        rounderthumbnails.loadValue()
+                        gridthumbnails.loadValue()
+                        postheight.selectedIndex = parseInt(Storage.getSetting("postheight"))
+                        nightmode.loadValue()
+                        autologin.loadValue()
+                        autohidetoolbar.loadValue()
+                        sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
+                        sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
+                        sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
+                    }
+
+
+                    ListItem.ValueSelector {
+                        id: postheight
+                        text: "Relative size of posts"
+
+                        values: Js.getPostHeightArray()
+
+                        onSelectedIndexChanged: Storage.setSetting("postheight", selectedIndex)
+                    }
+
+                    ListItem.Standard {
+                        text: "Enable thumbnails"
+                        height: units.gu(5)
+
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: enablethumbnails
+                            name: "enablethumbnails"
+                            onCheckedChanged: {
+                                reloadTabs()
+                            }
+                        }
+                    }
+
+                    ListItem.Standard {
+                        text: "Display thumbnails on left side"
+                        enabled: enablethumbnails.checked
+                        height: units.gu(5)
+
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: thumbnailsonleftside
+                            name: "thumbnailsonleftside"
+                            onCheckedChanged: {
+                                reloadTabs()
+                            }
+                        }
+                    }
+
+                    ListItem.Standard {
+                        text: "Rounder thumbnails"
+                        enabled: enablethumbnails.checked
+                        height: units.gu(5)
+
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: rounderthumbnails
+                            name: "rounderthumbnails"
+                            onCheckedChanged: {
+                                reloadTabs()
+                            }
+                        }
+                    }
+
+                    ListItem.Standard {
+                        text: "Gallery/grid view of thumbnails"
+                        enabled: enablethumbnails.checked
+                        height: units.gu(5)
+
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: gridthumbnails
+                            name: "gridthumbnails"
+                            onCheckedChanged: {
+                                reloadTabs()
+                            }
+                        }
+                    }
+
+                    ListItem.Standard {
+                        text: "Night mode"
+                        height: units.gu(5)
+
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: nightmode
+                            name: "nightmode"
+                        }
+                    }
+
+                    ListItem.Standard {
+                        text: "Autohide main toolbar"
+                        height: units.gu(5)
+
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: autohidetoolbar
+                            name: "autohidetoolbar"
+                            onCheckedChanged: {
+                                subredditpagetoolbar.lock = (!autohidetoolbar.checked)
+                            }
+                        }
+                    }
+
+                    ListItem.Standard {
+                        //width: parent.width
+                        height: units.gu(5)
+
+                        text: "Note: app will need to be restarted\nfor changes to take effect."
+                        opacity: .6
                     }
                 }
             }
 
-            MyFlipable {
-                id: flipable
+            Rectangle {
+                id: accountsettings
                 anchors.fill: parent
+                color: Js.getBackgroundColor()
+                visible: false
 
-                flipsvertically: false
+                Column {
+                    anchors.fill:parent
+                    ListItem.Standard {
+                        width: parent.width
+                        text: "If you enter a password it will be stored in clear text.\nIf you do not, you will be prompted for the password\nwhen you click 'login'"
+                        enabled: true
+                    }
+                    ListItem.Empty {
+                        width: parent.width
+                        height: accounttextfield.height
+                        TextField {
+                            id: accounttextfield
 
-                front: Rectangle {
-                    id: frontside
-                    anchors.fill: parent
+                            width: parent.width
+                            height: units.gu(8)
 
-                    color: Js.getBackgroundColor()
-                    enabled: !flipable.flipped
+                            placeholderText: "username"
+                            text: (Storage.getSetting("accountname") !== null) ? Storage.getSetting("accountname") : null
 
-                    Column {
-                        anchors.fill: parent
+                            onTextChanged: Storage.setSetting("accountname", text)
 
-                        Component.onCompleted: {
-                            Storage.initialize()
-                            console.debug("INITIALIZED")
-                            if (Storage.getSetting("initialized") !== "true") {
-                                // initialize settings
-                                console.debug("reset settings")
-                                Storage.setSetting("initialized", "true")
-                                Storage.setSetting("enablethumbnails", "true")
-                                Storage.setSetting("thumbnailsonleftside", "true")
-                                Storage.setSetting("rounderthumbnails", "false")
-                                Storage.setSetting("gridthumbnails", "false")
-                                Storage.setSetting("postheight", "0")
-                                Storage.setSetting("nightmode", "false")
-                                Storage.setSetting("autologin", "false")
-                                Storage.setSetting("sub1", "linux")
-                                Storage.setSetting("sub2", "pics")
-                                Storage.setSetting("sub3", "ubuntuphone")
-                                Storage.setSetting("accountname", "")
-                                Storage.setSetting("password", "")
-                                Storage.setSetting("autohidetoolbar", "false")
-                                reloadTabs()
-                            }
-                            // account...
-                            // subreddits...
-                            enablethumbnails.loadValue()
-                            thumbnailsonleftside.loadValue()
-                            rounderthumbnails.loadValue()
-                            gridthumbnails.loadValue()
-                            postheight.selectedIndex = parseInt(Storage.getSetting("postheight"))
-                            nightmode.loadValue()
-                            autologin.loadValue()
-                            autohidetoolbar.loadValue()
-                            sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
-                            sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
-                            sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
+                            enabled: true
+
+                            font.pixelSize: parent.height / 2
                         }
+                    }
 
+                    ListItem.Empty {
+                        width: parent.width
+                        height: passwordtextfield.height
 
-                        ListItem.ValueSelector {
-                            id: postheight
-                            text: "Relative size of posts"
+                        TextField {
+                            id: passwordtextfield
 
-                            values: Js.getPostHeightArray()
+                            width: parent.width
+                            height: accounttextfield.height
 
-                            onSelectedIndexChanged: Storage.setSetting("postheight", selectedIndex)
+                            placeholderText: "password"
+                            text: (Storage.getSetting("password") !== null) ? Storage.getSetting("password") : null
+
+                            onTextChanged: Storage.setSetting("password", text)
+
+                            enabled: true
+
+                            echoMode: TextInput.Password
+                            font.pixelSize: parent.height / 2
                         }
+                    }
+                    Button {
+                        id: loginbutton
+                        text: "login"
+                        height: units.gu(4)
+                        width: parent.width
+                        onClicked: {
+                            loginstatus.text = "waiting..."
 
-                        ListItem.Standard {
-                            text: "Enable thumbnails"
-                            height: units.gu(5)
+                            var http = new XMLHttpRequest()
+                            var loginurl = "https://ssl.reddit.com/api/login";
+                            var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
+                            http.open("POST", loginurl, true);
 
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: enablethumbnails
-                                name: "enablethumbnails"
-                                onCheckedChanged: {
-                                    reloadTabs()
+                            // Only display params, with password, if needed.
+                            // console.debug(params)
+
+                            // Send the proper header information along with the request
+                            http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                            http.setRequestHeader("Content-length", params.length);
+                            http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
+                            http.setRequestHeader("Connection", "close");
+
+                            http.onreadystatechange = function() {
+                                if (http.readyState == 4) {
+                                    if (http.status == 200) {
+                                        console.debug(http.responseText)
+                                        var jsonresponse = JSON.parse(http.responseText)
+                                        if (jsonresponse.json.data === undefined) {
+                                            loginstatus.text = "failed, try again" + "\n" + jsonresponse["json"]["errors"]
+                                            console.debug("error")
+                                        } else {
+                                            // store this user mod hash to pass to later api methods that require you to be logged in
+                                            Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
+                                            loginstatus.text = "log in successful"
+                                            toolbar.children[6].text = "logout"
+                                            console.debug("success")
+                                            reloadTabs()
+                                        }
+                                    } else {
+                                        console.debug("error: " + http.status)
+                                        loginstatus.text = "failed, try again"
+                                    }
                                 }
                             }
+                            http.send(params);
                         }
+                    }
+                    ListItem.Standard {
+                        text: "Automatically log in when app starts"
+                        height: units.gu(5)
 
-                        ListItem.Standard {
-                            text: "Display thumbnails on left side"
-                            enabled: enablethumbnails.checked
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: thumbnailsonleftside
-                                name: "thumbnailsonleftside"
-                                onCheckedChanged: {
-                                    reloadTabs()
-                                }
-                            }
+                        control: SettingSwitch {
+                            anchors.centerIn: parent
+                            id: autologin
+                            name: "autologin"
                         }
-
-                        ListItem.Standard {
-                            text: "Rounder thumbnails"
-                            enabled: enablethumbnails.checked
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: rounderthumbnails
-                                name: "rounderthumbnails"
-                                onCheckedChanged: {
-                                    reloadTabs()
-                                }
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Gallery/grid view of thumbnails"
-                            enabled: enablethumbnails.checked
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: gridthumbnails
-                                name: "gridthumbnails"
-                                onCheckedChanged: {
-                                    reloadTabs()
-                                }
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Night mode"
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: nightmode
-                                name: "nightmode"
-                            }
-                        }
-
-                        ListItem.Standard {
-                            text: "Autohide main toolbar"
-                            height: units.gu(5)
-
-                            control: SettingSwitch {
-                                anchors.centerIn: parent
-                                id: autohidetoolbar
-                                name: "autohidetoolbar"
-                                onCheckedChanged: {
-                                    //                                        toolbar.active = (!autohidetoolbar.checked)
-                                    //                                        toolbar.lock = (!autohidetoolbar.checked)
-                                }
-                            }
-                        }
-
-                        ListItem.Standard {
-                            //width: parent.width
-                            height: units.gu(5)
-
-                            text: "Note: app will need to be restarted\nfor changes to take effect."
-                            opacity: .6
-                        }
+                    }
+                    ListItem.Standard {
+                        id: loginstatus
+                        text: ""
+                        enabled: true
                     }
                 }
+            }
 
-                back: Rectangle {
-                    id: backside
+            Rectangle {
+                id: subredditsettings
+                anchors.fill: parent
+                color: Js.getBackgroundColor()
+                visible: false
 
-                    anchors.fill: parent
-                    color: Js.getBackgroundColor()
-                    enabled: flipable.flipped
-
-                    function loadLogin () {
-                        loginpage.visible = true
-                        subredditlist.visible = false
-
-                        flipable.flipped = true
-                    }
-
-                    function loadSubreddits () {
-                        loginpage.visible = false
-                        subredditlist.visible = true
-
-                        flipable.flipped = true
-                    }
-
-                    property bool commentpage: false
-                    property string urlviewing: ""
-
-                    Rectangle {
-                        height: parent.height
-                        width: parent.width
-                        anchors.bottom: parent.bottom
-                        color: parent.color
-
-                        Rectangle {
-                            id: loginpage
-                            opacity: 1
-
-                            anchors.fill: parent
-                            color: parent.color
-
-                            Column {
-                                anchors.fill:parent
-                                ListItem.Standard {
-                                    width: parent.width
-                                    text: "If you enter a password it will be stored in clear text.\nIf you do not, you will be prompted for the password\nwhen you click 'login'"
-                                    enabled: true
-                                }
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: accounttextfield.height
-                                    TextField {
-                                        id: accounttextfield
-
-                                        width: parent.width
-                                        height: units.gu(8)
-
-                                        placeholderText: "username"
-                                        text: (Storage.getSetting("accountname") !== null) ? Storage.getSetting("accountname") : null
-
-                                        onTextChanged: Storage.setSetting("accountname", text)
-
-                                        enabled: true
-
-                                        font.pixelSize: parent.height / 2
-                                    }
-                                }
-
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: passwordtextfield.height
-
-                                    TextField {
-                                        id: passwordtextfield
-
-                                        width: parent.width
-                                        height: accounttextfield.height
-
-                                        placeholderText: "password"
-                                        text: (Storage.getSetting("password") !== null) ? Storage.getSetting("password") : null
-
-                                        onTextChanged: Storage.setSetting("password", text)
-
-                                        enabled: true
-
-                                        echoMode: TextInput.Password
-                                        font.pixelSize: parent.height / 2
-                                    }
-                                }
-                                Button {
-                                    id: loginbutton
-                                    text: "login"
-                                    height: units.gu(4)
-                                    width: parent.width
-                                    onClicked: {
-                                        loginstatus.text = "waiting..."
-
-                                        var http = new XMLHttpRequest()
-                                        var loginurl = "https://ssl.reddit.com/api/login";
-                                        var params = "user="+Storage.getSetting("accountname")+"&passwd="+Storage.getSetting("password")+"&api_type=json";
-                                        http.open("POST", loginurl, true);
-
-                                        // Only display params, with password, if needed.
-                                        // console.debug(params)
-
-                                        // Send the proper header information along with the request
-                                        http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                                        http.setRequestHeader("Content-length", params.length);
-                                        http.setRequestHeader("User-Agent", "Ubuntu Phone Reddit App 0.1")
-                                        http.setRequestHeader("Connection", "close");
-
-                                        http.onreadystatechange = function() {
-                                            if (http.readyState == 4) {
-                                                if (http.status == 200) {
-                                                    console.debug(http.responseText)
-                                                    var jsonresponse = JSON.parse(http.responseText)
-                                                    if (jsonresponse.json.data === undefined) {
-                                                        loginstatus.text = "failed, try again" + "\n" + jsonresponse["json"]["errors"]
-                                                        console.debug("error")
-                                                    } else {
-                                                        // store this user mod hash to pass to later api methods that require you to be logged in
-                                                        Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
-                                                        loginstatus.text = "log in successful"
-                                                        toolbar.children[6].text = "logout"
-                                                        console.debug("success")
-                                                        reloadTabs()
-                                                    }
-                                                } else {
-                                                    console.debug("error: " + http.status)
-                                                    loginstatus.text = "failed, try again"
-                                                }
-                                            }
-                                        }
-                                        http.send(params);
-                                    }
-                                }
-                                ListItem.Standard {
-                                    text: "Automatically log in when app starts"
-                                    height: units.gu(5)
-
-                                    control: SettingSwitch {
-                                        anchors.centerIn: parent
-                                        id: autologin
-                                        name: "autologin"
-                                    }
-                                }
-                                ListItem.Standard {
-                                    id: loginstatus
-                                    text: ""
-                                    enabled: true
-                                }
-                            }
+                Column {
+                    anchors.fill:parent
+                    id: subredditColumn
+                    function stripSlashes (text) {
+                        var split = text.toLowerCase().split("/")
+                        var i = 0
+                        for (; split.length; i++) {
+                            if ( split[i] !== "" && split[i] !== null && split[i] !== "r") break
                         }
-                        Rectangle {
-                            id: subredditlist
+                        if (split[i] !== null && split.length > i && split[i].length > 0) {
+                            return split[i]
+                        } else {
+                            return ""
+                        }
+                    }
 
-                            anchors.fill: parent
-                            color: Js.getBackgroundColor()
+                    ListItem.Empty {
+                        width: parent.width
+                        height: units.gu(8)
 
-                            Column {
-                                anchors.fill:parent
-                                id: subredditColumn
-                                function stripSlashes (text) {
-                                    var split = text.toLowerCase().split("/")
-                                    var i = 0
-                                    for (; split.length; i++) {
-                                        if ( split[i] !== "" && split[i] !== null && split[i] !== "r") break
-                                    }
-                                    if (split[i] !== null && split.length > i && split[i].length > 0) {
-                                        return split[i]
-                                    } else {
-                                        return ""
-                                    }
-                                }
-
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
-
-                                    TextField {
-                                        id: sub1
-                                        width: parent.width
-                                        height: units.gu(8)
-                                        text: Storage.getSetting("sub1")
-                                        onTextChanged: {
-                                            Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
-                                            if (subredditColumn.stripSlashes(text) !== "") {
-                                                subredditpage.tools.children[0].visible = true
-                                                subredditpage.tools.children[0].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
-                                                subredditpage.tools.children[0].text = subredditColumn.stripSlashes(text)
-                                            } else {
-                                                subredditpage.tools.children[0].visible = false
-                                                subredditpage.tools.children[0].text = ""
-                                            }
-                                        }
-                                        enabled: true
-                                        font.pixelSize: parent.height / 2
-                                    }
-                                }
-
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
-
-                                    TextField {
-                                        id: sub2
-                                        width: parent.width
-                                        height: units.gu(8)
-                                        text: Storage.getSetting("sub2")
-                                        onTextChanged: {
-                                            Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
-                                            if (subredditColumn.stripSlashes(text) !== "") {
-                                                subredditpage.tools.children[1].visible = true
-                                                subredditpage.tools.children[1].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
-                                                subredditpage.tools.children[1].text = subredditColumn.stripSlashes(text)
-                                            } else {
-                                                subredditpage.tools.children[1].visible = false
-                                                subredditpage.tools.children[1].text = ""
-                                            }
-                                        }
-                                        enabled: true
-                                        font.pixelSize: parent.height / 2
-                                    }
-                                }
-
-                                ListItem.Empty {
-                                    width: parent.width
-                                    height: units.gu(8)
-
-                                    TextField {
-                                        id: sub3
-                                        width: parent.width
-                                        height: units.gu(8)
-                                        text:  Storage.getSetting("sub3")
-                                        onTextChanged: {
-                                            Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
-                                            if (subredditColumn.stripSlashes(text) !== "") {
-                                                subredditpage.tools.children[2].visible = true
-                                                subredditpage.tools.children[2].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
-                                                subredditpage.tools.children[2].text = subredditColumn.stripSlashes(text)
-                                            } else {
-                                                subredditpage.tools.children[2].visible = false
-                                                subredditpage.tools.children[2].text = ""
-                                            }
-                                        }
-                                        enabled: true
-                                        font.pixelSize: parent.height / 2
-                                    }
+                        TextField {
+                            id: sub1
+                            width: parent.width
+                            height: units.gu(8)
+                            text: Storage.getSetting("sub1")
+                            onTextChanged: {
+                                Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
+                                if (subredditColumn.stripSlashes(text) !== "") {
+                                    subredditpage.tools.children[0].visible = true
+                                    subredditpage.tools.children[0].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                    subredditpage.tools.children[0].text = subredditColumn.stripSlashes(text)
+                                } else {
+                                    subredditpage.tools.children[0].visible = false
+                                    subredditpage.tools.children[0].text = ""
                                 }
                             }
+                            enabled: true
+                            font.pixelSize: parent.height / 2
+                        }
+                    }
+
+                    ListItem.Empty {
+                        width: parent.width
+                        height: units.gu(8)
+
+                        TextField {
+                            id: sub2
+                            width: parent.width
+                            height: units.gu(8)
+                            text: Storage.getSetting("sub2")
+                            onTextChanged: {
+                                Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
+                                if (subredditColumn.stripSlashes(text) !== "") {
+                                    subredditpage.tools.children[1].visible = true
+                                    subredditpage.tools.children[1].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                    subredditpage.tools.children[1].text = subredditColumn.stripSlashes(text)
+                                } else {
+                                    subredditpage.tools.children[1].visible = false
+                                    subredditpage.tools.children[1].text = ""
+                                }
+                            }
+                            enabled: true
+                            font.pixelSize: parent.height / 2
+                        }
+                    }
+
+                    ListItem.Empty {
+                        width: parent.width
+                        height: units.gu(8)
+
+                        TextField {
+                            id: sub3
+                            width: parent.width
+                            height: units.gu(8)
+                            text:  Storage.getSetting("sub3")
+                            onTextChanged: {
+                                Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
+                                if (subredditColumn.stripSlashes(text) !== "") {
+                                    subredditpage.tools.children[2].visible = true
+                                    subredditpage.tools.children[2].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                    subredditpage.tools.children[2].text = subredditColumn.stripSlashes(text)
+                                } else {
+                                    subredditpage.tools.children[2].visible = false
+                                    subredditpage.tools.children[2].text = ""
+                                }
+                            }
+                            enabled: true
+                            font.pixelSize: parent.height / 2
                         }
                     }
                 }
