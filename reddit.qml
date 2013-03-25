@@ -649,6 +649,7 @@ MainView {
                                     onClicked: {
                                         mainPageStack.push(commentpage)
                                         console.log("item clicked")
+                                        commentslistmodel.source = ""
                                         commentpage.permalink = model.data.permalink
                                         commentpage.title = model.data.title
                                         commentpage.likes = model.data.likes
@@ -982,6 +983,7 @@ MainView {
                     onTriggered: {
                         mainPageStack.push(commentpage)
                         console.log("item clicked")
+                        commentslistmodel.source = ""
                         commentpage.permalink = linkpage.permalink
                         commentpage.title = linkpage.title
                         commentpage.likes = linkpage.likes
