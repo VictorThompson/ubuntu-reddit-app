@@ -21,6 +21,7 @@ MainView {
             login()
         }
     }
+
     PageStack {
         id: mainPageStack
         anchors.fill: parent
@@ -458,6 +459,11 @@ MainView {
                         }
                     }
                 }
+            }
+
+            Rectangle {
+                color: Js.getBackgroundColor()
+                anchors.fill: parent
             }
 
             function refreshTab() {
@@ -989,6 +995,7 @@ MainView {
             property string permalink: ""
             property string thingname: ""
             property string urlviewing: "about:blank"
+
             WebView {
                 id: webview
                 width: mainView.width
@@ -1015,10 +1022,10 @@ MainView {
 
             onUrlviewingChanged: webview.url = urlviewing
         }
-
         Page {
             id: settingspage
             title: "Settings"
+            visible: false
 
             tools: ToolbarActions {
                 id: settingstoolbar
@@ -1074,6 +1081,7 @@ MainView {
                 accountsettings.visible = false
                 subredditsettings.visible = true
             }
+
             Rectangle {
                 id: mainsettings
                 anchors.fill: parent
