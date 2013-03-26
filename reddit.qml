@@ -896,7 +896,7 @@ MainView {
                     onTriggered: {
                         var http = new XMLHttpRequest()
                         var voteurl = "http://www.reddit.com/api/vote"
-                        var direction = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? "0" : "1"
+                        var direction = (linktoolbar.children[0].iconSource.toString().match(".*upvote.png$")) ? "0" : "1"
                         var params = "dir=" + direction + "&id=" + linkpage.thingname + "&uh="+Storage.getSetting("userhash")+"&api_type=json";
                         http.open("POST", voteurl, true);
                         console.debug(params)
@@ -916,9 +916,9 @@ MainView {
                                         console.debug("error")
                                     } else {
                                         console.debug("Upvoted!")
-                                        linkpage.likes = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? null : true
-                                        tools.children[1].iconSource = (tools.children[1].iconSource.toString().match(".*upvote.png$")) ? "upvoteEmpty.png" : "upvote.png"
-                                        tools.children[2].iconSource = "downvoteEmpty.png"
+                                        linkpage.likes = (linktoolbar.children[0].iconSource.toString().match(".*upvote.png$")) ? null : true
+                                        linktoolbar.children[0].iconSource = (linktoolbar.children[0].iconSource.toString().match(".*upvote.png$")) ? "upvoteEmpty.png" : "upvote.png"
+                                        linktoolbar.children[1].iconSource = "downvoteEmpty.png"
 
                                     }
                                 } else {
@@ -941,7 +941,7 @@ MainView {
                     onTriggered: {
                         var http = new XMLHttpRequest()
                         var voteurl = "http://www.reddit.com/api/vote"
-                        var direction = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? "0" : "-1"
+                        var direction = (linktoolbar.children[1].iconSource.toString().match(".*downvote.png$")) ? "0" : "-1"
                         var params = "dir=" + direction + "&id=" + linkpage.thingname+"&uh=" + Storage.getSetting("userhash")+"&api_type=json";
                         http.open("POST", voteurl, true);
                         console.debug(params)
@@ -961,9 +961,9 @@ MainView {
                                         console.debug("error")
                                     } else {
                                         console.debug("Downvoted!")
-                                        linkpage.likes = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? null : false
-                                        tools.children[1].iconSource = "upvoteEmpty.png"
-                                        tools.children[2].iconSource = (tools.children[2].iconSource.toString().match(".*downvote.png$")) ? "downvoteEmpty.png" : "downvote.png"
+                                        linkpage.likes = (linktoolbar.children[1].iconSource.toString().match(".*downvote.png$")) ? null : false
+                                        linktoolbar.children[0].iconSource = "upvoteEmpty.png"
+                                        linktoolbar.children[1].iconSource = (linktoolbar.children[1].iconSource.toString().match(".*downvote.png$")) ? "downvoteEmpty.png" : "downvote.png"
                                     }
                                 } else {
                                     console.debug("error: " + http.status)
@@ -1322,7 +1322,7 @@ MainView {
                                             // store this user mod hash to pass to later api methods that require you to be logged in
                                             Storage.setSetting("userhash", jsonresponse["json"]["data"]["modhash"])
                                             loginstatus.text = "log in successful"
-                                            toolbar.children[6].text = "logout"
+                                            subredditpagetoolbar.children[6].text = "logout"
                                             console.debug("success")
                                             reloadTabs()
                                         }
