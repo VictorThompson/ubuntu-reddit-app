@@ -407,8 +407,8 @@ MainView {
                 Action {
                     objectName: "enter"
 
-                    text: "?"
-                    iconSource: Qt.resolvedUrl("reddit.png")
+                    text: "find"
+                    iconSource: "image://gicon/edit-find-symbolic"
 
                     onTriggered: {
                         dialog.showSubredditPrompt()
@@ -419,7 +419,7 @@ MainView {
                     objectName: "home"
 
                     text: "home"
-                    iconSource: Qt.resolvedUrl("reddit.png")
+                    iconSource: "image://gicon/go-home-symbolic"
 
                     onTriggered: {
                         mainView.url = "/"
