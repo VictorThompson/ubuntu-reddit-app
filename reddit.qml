@@ -886,8 +886,6 @@ MainView {
         }
         Page {
             id: linkpage
-            width: mainView.width
-            height: mainView.height
             tools: ToolbarActions {
                 id: linktoolbar
 
@@ -1010,19 +1008,21 @@ MainView {
             property string thingname: ""
             property string urlviewing: "about:blank"
 
-            WebView {
-                id: webview
-                width: mainView.width
-                height: mainView.height
-                url: linkpage.urlviewing
-                smooth: true
+            Item {
+                anchors.fill: parent
+                WebView {
+                    id: webview
+                    anchors.fill: parent
+                    url: linkpage.urlviewing
+                    smooth: true
 
-                onLoadingChanged: {
-                    loadProgressBar.visible = loading
-                }
+                    onLoadingChanged: {
+                        loadProgressBar.visible = loading
+                    }
 
-                onLoadProgressChanged: {
-                    loadProgressBar.value = loadProgress
+                    onLoadProgressChanged: {
+                        loadProgressBar.value = loadProgress
+                    }
                 }
             }
             ProgressBar {
