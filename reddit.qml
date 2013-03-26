@@ -599,7 +599,9 @@ MainView {
                                             console.log("image clicked")
                                             linkpage.permalink = model.data.permalink
                                             linkpage.title = model.data.title
-                                            linkpage.likes = model.data.likes
+                                            linkpage.likes = model.data.likes.toString()
+                                            linktoolbar.children[0].iconSource = (linkpage.likes === "true" ? Qt.resolvedUrl("upvote.png") : Qt.resolvedUrl("upvoteEmpty.png"))
+                                            linktoolbar.children[1].iconSource = (linkpage.likes === "false" ? Qt.resolvedUrl("downvote.png") : Qt.resolvedUrl("downvoteEmpty.png"))
                                             linkpage.thingname = model.data.name
                                             itemrectangle.color = Js.getDimmedBackgroundColor()
                                             seenit.opacity = 1
@@ -652,7 +654,7 @@ MainView {
                                         commentslistmodel.source = ""
                                         commentpage.permalink = model.data.permalink
                                         commentpage.title = model.data.title
-                                        commentpage.likes = model.data.likes
+                                        commentpage.likes = model.data.likes.toString()
                                         commentpage.thingname = model.data.name
                                         commentslistmodel.source = "http://www.reddit.com" + commentpage.permalink + ".json"
                                     }
@@ -731,7 +733,9 @@ MainView {
                                         linkpage.urlviewing = model.data.url
                                         linkpage.permalink = model.data.permalink
                                         linkpage.title = model.data.title
-                                        linkpage.likes = model.data.likes
+                                        linkpage.likes = model.data.likes.toString()
+                                        linktoolbar.children[0].iconSource = (linkpage.likes === "true" ? Qt.resolvedUrl("upvote.png") : Qt.resolvedUrl("upvoteEmpty.png"))
+                                        linktoolbar.children[1].iconSource = (linkpage.likes === "false" ? Qt.resolvedUrl("downvote.png") : Qt.resolvedUrl("downvoteEmpty.png"))
                                         linkpage.thingname = model.data.name
                                         gridseenit.opacity = 1
                                     }
@@ -750,7 +754,7 @@ MainView {
         Page {
             id: commentpage
 
-            property bool likes: null
+            property string likes: null
             property string permalink: ""
             property string thingname: ""
             property string urlviewing: ""
@@ -891,7 +895,7 @@ MainView {
                     objectName: "upvote"
 
                     text: "upvote"
-                    iconSource: Qt.resolvedUrl("upvoteEmpty.png")
+                    iconSource: linkpage.likes === "true" ? Qt.resolvedUrl("upvote.png") : Qt.resolvedUrl("upvoteEmpty.png")
 
                     onTriggered: {
                         var http = new XMLHttpRequest()
@@ -916,7 +920,7 @@ MainView {
                                         console.debug("error")
                                     } else {
                                         console.debug("Upvoted!")
-                                        linkpage.likes = (linktoolbar.children[0].iconSource.toString().match(".*upvote.png$")) ? null : true
+                                        linkpage.likes = (linktoolbar.children[0].iconSource.toString().match(".*upvote.png$")) ? "null" : "true"
                                         linktoolbar.children[0].iconSource = (linktoolbar.children[0].iconSource.toString().match(".*upvote.png$")) ? "upvoteEmpty.png" : "upvote.png"
                                         linktoolbar.children[1].iconSource = "downvoteEmpty.png"
 
@@ -936,7 +940,7 @@ MainView {
 
                     visible: true
                     text: "downvote"
-                    iconSource: Qt.resolvedUrl("downvoteEmpty.png")
+                    iconSource: linkpage.likes === "false" ? Qt.resolvedUrl("downvote.png") : Qt.resolvedUrl("downvoteEmpty.png")
 
                     onTriggered: {
                         var http = new XMLHttpRequest()
@@ -961,7 +965,7 @@ MainView {
                                         console.debug("error")
                                     } else {
                                         console.debug("Downvoted!")
-                                        linkpage.likes = (linktoolbar.children[1].iconSource.toString().match(".*downvote.png$")) ? null : false
+                                        linkpage.likes = (linktoolbar.children[1].iconSource.toString().match(".*downvote.png$")) ? "null" : "false"
                                         linktoolbar.children[0].iconSource = "upvoteEmpty.png"
                                         linktoolbar.children[1].iconSource = (linktoolbar.children[1].iconSource.toString().match(".*downvote.png$")) ? "downvoteEmpty.png" : "downvote.png"
                                     }
@@ -991,9 +995,16 @@ MainView {
                         commentslistmodel.source = "http://www.reddit.com" + commentpage.permalink + ".json"
                     }
                 }
+
+                back {
+                    text: "Back"
+                    onTriggered: {
+                        webview.url = "about:blank"
+                    }
+                }
             }
 
-            property bool likes: null
+            property string likes: null
             property string permalink: ""
             property string thingname: ""
             property string urlviewing: "about:blank"
