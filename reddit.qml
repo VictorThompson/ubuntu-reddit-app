@@ -984,6 +984,7 @@ MainView {
                     text: "comments"
                     iconSource: Qt.resolvedUrl("comments.png")
 
+
                     onTriggered: {
                         mainPageStack.push(commentpage)
                         console.log("item clicked")
@@ -1139,6 +1140,7 @@ MainView {
                         sub1.text = (Storage.getSetting("sub1") === null) ? "" : Storage.getSetting("sub1")
                         sub2.text = (Storage.getSetting("sub2") === null) ? "" : Storage.getSetting("sub2")
                         sub3.text = (Storage.getSetting("sub3") === null) ? "" : Storage.getSetting("sub3")
+                        loginbutton.enabled = (passwordtextfield.text.toString().length > 0 && accounttextfield.text.toString().length > 0)
                     }
 
 
@@ -1270,7 +1272,10 @@ MainView {
                             placeholderText: "username"
                             text: (Storage.getSetting("accountname") !== null) ? Storage.getSetting("accountname") : null
 
-                            onTextChanged: Storage.setSetting("accountname", text)
+                            onTextChanged: {
+                                loginbutton.enabled = (passwordtextfield.text.toString().length > 0 && accounttextfield.text.toString().length > 0)
+                                Storage.setSetting("accountname", text)
+                            }
 
                             enabled: true
 
@@ -1291,7 +1296,10 @@ MainView {
                             placeholderText: "password"
                             text: (Storage.getSetting("password") !== null) ? Storage.getSetting("password") : null
 
-                            onTextChanged: Storage.setSetting("password", text)
+                            onTextChanged: {
+                                loginbutton.enabled = (passwordtextfield.text.toString().length > 0 && accounttextfield.text.toString().length > 0)
+                                Storage.setSetting("password", text)
+                            }
 
                             enabled: true
 
