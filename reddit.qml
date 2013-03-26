@@ -1388,7 +1388,7 @@ MainView {
                                 Storage.setSetting("sub1", subredditColumn.stripSlashes(text))
                                 if (subredditColumn.stripSlashes(text) !== "") {
                                     subredditpage.tools.children[0].visible = true
-                                    subredditpage.tools.children[0].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                    subredditpage.tools.children[0].iconSource = Qt.resolvedUrl(subredditpage.chooseIcon(subredditColumn.stripSlashes(text)))
                                     subredditpage.tools.children[0].text = subredditColumn.stripSlashes(text)
                                 } else {
                                     subredditpage.tools.children[0].visible = false
@@ -1413,7 +1413,7 @@ MainView {
                                 Storage.setSetting("sub2", subredditColumn.stripSlashes(text))
                                 if (subredditColumn.stripSlashes(text) !== "") {
                                     subredditpage.tools.children[1].visible = true
-                                    subredditpage.tools.children[1].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                    subredditpage.tools.children[1].iconSource = Qt.resolvedUrl(subredditpage.chooseIcon(subredditColumn.stripSlashes(text)))
                                     subredditpage.tools.children[1].text = subredditColumn.stripSlashes(text)
                                 } else {
                                     subredditpage.tools.children[1].visible = false
@@ -1438,7 +1438,7 @@ MainView {
                                 Storage.setSetting("sub3", subredditColumn.stripSlashes(text))
                                 if (subredditColumn.stripSlashes(text) !== "") {
                                     subredditpage.tools.children[2].visible = true
-                                    subredditpage.tools.children[2].iconSource = Qt.resolvedUrl(toolbar.chooseIcon(subredditColumn.stripSlashes(text)))
+                                    subredditpage.tools.children[2].iconSource = Qt.resolvedUrl(subredditpage.chooseIcon(subredditColumn.stripSlashes(text)))
                                     subredditpage.tools.children[2].text = subredditColumn.stripSlashes(text)
                                 } else {
                                     subredditpage.tools.children[2].visible = false
